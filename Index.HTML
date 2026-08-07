@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Weather Dashboard</title>
+  <style>
+    :root {
+      --bg-primary: #0f172a;
+      --card-bg: rgba(255, 255, 255, 0.08);
+      --card-border: rgba(255, 255, 255, 0.12);
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent: #38bdf8;
+      --accent-hover: #0284c7;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .dashboard-container {
+      width: 100%;
+      max-width: 900px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    /* Header & Search Bar */
+    .search-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .search-box {
+      display: flex;
+      flex: 1;
+      min-width: 280px;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 6px 12px;
+      backdrop-filter: blur(10px);
+    }
+
+    .search-box input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: var(--text-main);
+      font-size: 1rem;
+      padding: 8px;
+    }
+
+    .search-box input::placeholder {
+      color: var(--text-muted);
+    }
+
+    .search-box button {
+      background: var(--accent);
+      color: #0f172a;
+      border: none;
+      border-radius: 8px;
+      padding: 8px 18px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s ease;
+    }
+
+    .search-box button:hover {
+      background: var(--accent-hover);
+    }
+
+    /* Current Weather Section */
+    .current-weather-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      padding: 32px;
+      backdrop-filter: blur(12px);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+    }
+
+    .location-info {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 24px;
+    }
+
+    .location-info h1 {
+      font-size: 2rem;
+      font-weight: 700;
+    }
+
+    .location-info p {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      margin-top: 4px;
+    }
+
+    .main-stats {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 20px;
+      margin-bottom: 32px;
+    }
+
+    .temp-display {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .temp-display .icon {
+      font-size: 4rem;
+    }
+
+    .temp-display .temperature {
+      font-size: 4.5rem;
+      font-weight: 800;
+      line-height: 1;
+    }
+
+    .temp-display .condition {
+      font-size: 1.25rem;
+      color: var(--text-muted);
+      text-transform: capitalize;
+    }
+
+    .weather-metrics {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 16px;
+      width: 100%;
+      border-top: 1px solid var(--card-border);
+      padding-top: 24px;
+    }
+
+    .metric-item {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .metric-label {
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .metric-value {
+      font-size: 1.2rem;
+      font-weight: 600;
+    }
+
+    /* 5-Day Forecast Section */
+    .forecast-section h2 {
+      font-size: 1.3rem;
+      font-weight: 600;
+      margin-bottom: 16px;
+    }
+
+    .forecast-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 16px;
+    }
+
+    .forecast-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 20px 16px;
+      backdrop-filter: blur(10px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      transition: transform 0.2s ease;
+    }
+
+    .forecast-card:hover {
+      transform: translateY(-4px);
+    }
+
+    .forecast-day {
+      font-weight: 600;
+      font-size: 1rem;
+      margin-bottom: 4px;
+    }
+
+    .forecast-date {
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      margin-bottom: 12px;
+    }
+
+    .forecast-icon {
+      font-size: 2.2rem;
+      margin-bottom: 12px;
+    }
+
+    .forecast-temp {
+      font-size: 1.1rem;
+      font-weight: 700;
+    }
+
+    .forecast-temp .min-temp {
+      color: var(--text-muted);
+      font-weight: 400;
+      font-size: 0.9rem;
+    }
+
+    @media (max-width: 600px) {
+      .current-weather-card {
+        padding: 20px;
+      }
+      .temp-display .temperature {
+        font-size: 3.5rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="dashboard-container">
+    
+    <!-- Header with Search -->
+    <header class="search-header">
+      <div class="search-box">
+        <input type="text" id="cityInput" placeholder="Search for a city..." value="New York">
+        <button id="searchBtn">Search</button>
+      </div>
+    </header>
+
+    <!-- Current Weather -->
+    <main class="current-weather-card">
+      <div class="location-info">
+        <div>
+          <h1 id="cityName">New York, US</h1>
+          <p id="currentDate">Thursday, August 6, 2026</p>
+        </div>
+      </div>
+
+      <div class="main-stats">
+        <div class="temp-display">
+          <span class="icon" id="currentIcon">☀️</span>
+          <div>
+            <div class="temperature"><span id="currentTemp">72</span>°F</div>
+            <div class="condition" id="currentCondition">Clear Sky</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="weather-metrics">
+        <div class="metric-item">
+          <span class="metric-label">Wind Speed</span>
+          <span class="metric-value" id="windSpeed">8 mph</span>
+        </div>
+        <div class="metric-item">
+          <span class="metric-label">Humidity</span>
+          <span class="metric-value" id="humidity">45%</span>
+        </div>
+        <div class="metric-item">
+          <span class="metric-label">Pressure</span>
+          <span class="metric-value" id="pressure">1014 hPa</span>
+        </div>
+        <div class="metric-item">
+          <span class="metric-label">UV Index</span>
+          <span class="metric-value" id="uvIndex">6 (Moderate)</span>
+        </div>
+      </div>
+    </main>
+
+    <!-- 5-Day Forecast -->
+    <section class="forecast-section">
+      <h2>5-Day Forecast</h2>
+      <div class="forecast-grid" id="forecastGrid">
+        <!-- Generated dynamically via JS -->
+      </div>
+    </section>
+
+  </div>
+
+  <script>
+    // Mock Weather Data
+    const mockData = {
+      cityName: "New York, US",
+      temp: 72,
+      condition: "Clear Sky",
+      icon: "☀️",
+      wind: "8 mph",
+      humidity: "45%",
+      pressure: "1014 hPa",
+      uv: "6 (Moderate)",
+      forecast: [
+        { day: "Fri", date: "Aug 7", icon: "🌤️", maxTemp: 75, minTemp: 62 },
+        { day: "Sat", date: "Aug 8", icon: "🌧️", maxTemp: 68, minTemp: 58 },
+        { day: "Sun", date: "Aug 9", icon: "⛈️", maxTemp: 70, minTemp: 60 },
+        { day: "Mon", date: "Aug 10", icon: "⛅", maxTemp: 73, minTemp: 61 },
+        { day: "Tue", date: "Aug 11", icon: "☀️", maxTemp: 78, minTemp: 65 }
+      ]
+    };
+
+    function renderWeather(data) {
+      document.getElementById('cityName').textContent = data.cityName;
+      document.getElementById('currentTemp').textContent = data.temp;
+      document.getElementById('currentCondition').textContent = data.condition;
+      document.getElementById('currentIcon').textContent = data.icon;
+      document.getElementById('windSpeed').textContent = data.wind;
+      document.getElementById('humidity').textContent = data.humidity;
+      document.getElementById('pressure').textContent = data.pressure;
+      document.getElementById('uvIndex').textContent = data.uv;
+
+      const forecastGrid = document.getElementById('forecastGrid');
+      forecastGrid.innerHTML = '';
+
+      data.forecast.forEach(item => {
+        const card = document.createElement('div');
+        card.className = 'forecast-card';
+        card.innerHTML = `
+          <div class="forecast-day">${item.day}</div>
+          <div class="forecast-date">${item.date}</div>
+          <div class="forecast-icon">${item.icon}</div>
+          <div class="forecast-temp">${item.maxTemp}° <span class="min-temp">${item.minTemp}°</span></div>
+        `;
+        forecastGrid.appendChild(card);
+      });
+    }
+
+    // Initialize Dashboard
+    renderWeather(mockData);
+
+    // Search Trigger (Mock search implementation)
+    document.getElementById('searchBtn').addEventListener('click', () => {
+      const city = document.getElementById('cityInput').value.trim();
+      if (city) {
+        mockData.cityName = `${city.charAt(0).toUpperCase() + city.slice(1)}`;
+        // Dynamically vary mockup temps based on input
+        mockData.temp = Math.floor(Math.random() * (85 - 55 + 1)) + 55;
+        renderWeather(mockData);
+      }
+    });
+
+    /* 
+      To connect a live API like OpenWeatherMap, replace the search button handler with:
+      
+      async function fetchWeather(city) {
+        const apiKey = 'YOUR_API_KEY';
+        const currentUrl = `https://api.openweathermap.org/data/2.5/weather?q=${city}&units=imperial&appid=${apiKey}`;
+        const forecastUrl = `https://api.openweathermap.org/data/2.5/forecast?q=${city}&units=imperial&appid=${apiKey}`;
+        
+        const [currentRes, forecastRes] = await Promise.all([
+          fetch(currentUrl).then(res => res.json()),
+          fetch(forecastUrl).then(res => res.json())
+        ]);
+
+        // Map API properties to UI elements here...
+      }
+    */
+  </script>
+</body>
+</html>
