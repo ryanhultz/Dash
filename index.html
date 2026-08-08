@@ -442,8 +442,11 @@
 <script>
 /* ==================================================================
    SIMULATION MODE — every external connection below (weather API,
-   Google Calendar API, Enphase Enlighten telemetry) is mocked with
+   Apple Calendar, Enphase Enlighten, Emporia telemetry) is mocked with
    locally-generated data. Nothing on this page makes a network call.
+   The simulated weather (cloud cover, temperature) now drives the
+   solar and home-energy simulations too, so a cloudy/rainy day pulls
+   down solar output and a cold/hot day adds heating or AC load.
    Search "SIMULATED" to find each mock and swap in a real API later.
    ================================================================== */
 
@@ -476,6 +479,22 @@ function wText(c){
     82:"Heavy Showers",85:"Snow Showers",86:"Snow Showers",95:"Thunderstorm",96:"Thunderstorm",99:"Thunderstorm"};
   return m[c]||"—";
 }
+// Shared simulated weather state — other panels (solar, home energy) read
+// this so the whole dashboard reacts consistently to the same conditions.
+window.SIM = { weather: { tempF: 50, code: 0, cloudFactor: 1 } };
+function cloudFactorForCode(code){
+  if(code===0) return 1.0;
+  if(code===1) return 0.9;
+  if(code===2) return 0.75;
+  if(code===3) return 0.55;
+  if([45,48].includes(code)) return 0.5;
+  if([51,53,55,56,57].includes(code)) return 0.45;
+  if([61,63,65,66,67,80,81,82].includes(code)) return 0.3;
+  if([71,73,75,77,85,86].includes(code)) return 0.35;
+  if([95,96,99].includes(code)) return 0.2;
+  return 0.8;
+}
+
 // SIMULATED weather generator — replace with a real fetch() to
 // api.open-meteo.com (or any weather API) when you're ready to go live.
 const WX_CODES_FAIR = [0,1,2];
@@ -486,20 +505,24 @@ function seededRandom(seed){ // small deterministic PRNG so today's data is stab
 function simulateWeather(){
   const now = new Date();
   const dayOfYear = Math.floor((now - new Date(now.getFullYear(),0,0))/86400000);
-  const rnd = seededRandom(dayOfYear*17 + now.getHours());
+  const hFloat = now.getHours() + now.getMinutes()/60;
 
-  // rough seasonal baseline for Cayuga, NY, then a little daily wobble
+  // rough seasonal baseline for Cayuga, NY, plus a smooth time-of-day curve
   const seasonal = 45 + 30*Math.sin((dayOfYear-100)/365*2*Math.PI);
-  const hourAdj = 8*Math.sin(((now.getHours()-6)/24)*2*Math.PI);
-  const nowTemp = Math.round(seasonal + hourAdj + (rnd()*6-3));
-  const nowCode = WX_CODES_FAIR[Math.floor(rnd()*WX_CODES_FAIR.length)];
+  const hourAdj = 8*Math.sin(((hFloat-6)/24)*2*Math.PI);
+  const nowTemp = Math.round(seasonal + hourAdj + (Math.random()*4-2)); // live jitter each refresh
+
+  // condition changes every ~15 min rather than being pinned for the whole hour
+  const codeSeed = seededRandom(dayOfYear*97 + Math.floor(hFloat*4));
+  const nowCode = WX_CODES_FAIR[Math.floor(codeSeed()*WX_CODES_FAIR.length)];
+  window.SIM.weather = { tempF: nowTemp, code: nowCode, cloudFactor: cloudFactorForCode(nowCode) };
 
   document.getElementById("wx-icon").textContent = wIcon(nowCode);
   document.getElementById("wx-temp").textContent = nowTemp+"°F";
   document.getElementById("wx-cond").textContent = wText(nowCode);
-  document.getElementById("wx-hum").textContent = Math.round(40+rnd()*30)+"%";
-  document.getElementById("wx-wind").textContent = Math.round(2+rnd()*10)+" mph";
-  document.getElementById("wx-press").textContent = (29.7+rnd()*0.7).toFixed(2)+" in";
+  document.getElementById("wx-hum").textContent = Math.round(40+Math.random()*30)+"%";
+  document.getElementById("wx-wind").textContent = Math.round(2+Math.random()*10)+" mph";
+  document.getElementById("wx-press").textContent = (29.7+Math.random()*0.7).toFixed(2)+" in";
   document.getElementById("h-temp").textContent = nowTemp+"°F";
   document.getElementById("wx-sunrise").textContent = "5:47 AM";
   document.getElementById("wx-sunset").textContent = "8:21 PM";
@@ -509,7 +532,7 @@ function simulateWeather(){
   for(let i=0;i<5;i++){
     const date = new Date(); date.setDate(date.getDate()+i);
     const label = i===0 ? "TODAY" : date.toLocaleDateString("en-US",{weekday:"short"}).toUpperCase();
-    const drnd = seededRandom(dayOfYear*31 + i*7);
+    const drnd = seededRandom(dayOfYear*31 + i*7); // stable per day — forecast shouldn't jitter every refresh
     const code = codes[Math.floor(drnd()*codes.length)];
     const hi = Math.round(seasonal + 6 + drnd()*8);
     const lo = Math.round(seasonal - 8 + drnd()*6);
@@ -523,7 +546,7 @@ function simulateWeather(){
     </div>`;
   }
 }
-simulateWeather(); setInterval(simulateWeather, 60*1000);
+simulateWeather(); setInterval(()=>{ simulateWeather(); if(typeof drawSolarCurve==="function") drawSolarCurve(); }, 15*1000);
 
 // SIMULATED calendar — replace with a real iCloud/Apple Calendar feed
 // (a public "webcal" ICS link fetched through a small CORS proxy, or
@@ -570,8 +593,9 @@ function kwAtHour(hFloat){
 }
 function drawSolarCurve(){
   const max = 9, w = 600, h = 170, pad = 8;
+  const factor = window.SIM.weather.cloudFactor;
   const stepX = w/(SOLAR_HOURLY_KW.length-1);
-  const xy = SOLAR_HOURLY_KW.map((v,i)=>[i*stepX, h-pad-(v/max)*(h-pad*2)]);
+  const xy = SOLAR_HOURLY_KW.map((v,i)=>[i*stepX, h-pad-((v*factor)/max)*(h-pad*2)]);
   const line = xy.map((p,i)=> (i===0?"M":"L")+p[0].toFixed(1)+","+p[1].toFixed(1)).join(" ");
   const area = line + ` L${w},${h} L0,${h} Z`;
   document.getElementById("solar-line").setAttribute("d", line);
@@ -580,12 +604,13 @@ function drawSolarCurve(){
 function updateSolarLive(){
   const now = new Date();
   const hFloat = now.getHours() + now.getMinutes()/60;
-  const kw = kwAtHour(hFloat) * (0.92 + Math.random()*0.16); // small jitter for a "live" feel
+  const factor = window.SIM.weather.cloudFactor;
+  const kw = kwAtHour(hFloat) * factor * (0.92 + Math.random()*0.16); // small jitter for a "live" feel
   document.getElementById("solar-kw").textContent = kw.toFixed(1);
 
   // rough running total for "today" by integrating the curve up to now
   let kwh = 0;
-  for(let h=0; h<hFloat; h+=0.25) kwh += kwAtHour(h)*0.25;
+  for(let h=0; h<hFloat; h+=0.25) kwh += kwAtHour(h)*factor*0.25;
   document.getElementById("solar-today").textContent = kwh.toFixed(1)+" kWh";
 }
 drawSolarCurve();
@@ -599,18 +624,25 @@ function kwAtHourGeneric(arr, hFloat){
   const i0 = Math.floor(hFloat)%24, i1 = (i0+1)%24, frac = hFloat-Math.floor(hFloat);
   return arr[i0] + (arr[i1]-arr[i0])*frac;
 }
+function hvacLoadKw(tempF){
+  // simple heating/cooling draw once temps swing away from a comfortable band
+  if(tempF < 35) return (35-tempF)*0.09;   // resistance/heat-pump load in cold weather
+  if(tempF > 82) return (tempF-82)*0.11;   // AC load in hot weather
+  return 0;
+}
 function updateEmporia(){
   const now = new Date();
   const hFloat = now.getHours() + now.getMinutes()/60;
+  const hvac = hvacLoadKw(window.SIM.weather.tempF);
 
   // -- home use --
-  const homeKw = kwAtHourGeneric(HOME_HOURLY_KW, hFloat) * (0.9 + Math.random()*0.2);
+  const homeKw = kwAtHourGeneric(HOME_HOURLY_KW, hFloat) * (0.9 + Math.random()*0.2) + hvac;
   document.getElementById("emp-home-kw").textContent = homeKw.toFixed(2);
   let homeKwh = 0;
-  for(let h=0; h<hFloat; h+=0.25) homeKwh += kwAtHourGeneric(HOME_HOURLY_KW, h)*0.25;
+  for(let h=0; h<hFloat; h+=0.25) homeKwh += kwAtHourGeneric(HOME_HOURLY_KW, h)*0.25 + hvac*0.25;
   document.getElementById("emp-home-today").textContent = homeKwh.toFixed(1)+" kWh";
   document.getElementById("emp-home-month").textContent = Math.round(homeKwh*27)+" kWh";
-  const solarKw = kwAtHour(hFloat);
+  const solarKw = kwAtHour(hFloat) * window.SIM.weather.cloudFactor;
   const net = solarKw - homeKw;
   document.getElementById("emp-home-net").textContent = (net>=0 ? "+" : "") + net.toFixed(1) + " kW";
   document.getElementById("emp-home-cost").textContent = "$" + (homeKwh*0.16).toFixed(2);
