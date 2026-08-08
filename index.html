@@ -50,7 +50,7 @@
 
   /* ---- grid ---- */
   .row{display:grid; gap:18px;}
-  .row.top{grid-template-columns: 0.82fr 1.18fr;}
+  .row.top{grid-template-columns: 1fr;}
   .row.mid{grid-template-columns: 0.82fr 1.18fr;}
   @media (max-width: 880px){
     .row.top, .row.mid{grid-template-columns:1fr;}
@@ -93,15 +93,23 @@
   .wstat.sun .sunrow{display:flex; align-items:center; gap:7px;}
   .wstat.sun svg{width:14px; height:14px;}
 
+  #wx-feels{font-size:13px; color:var(--text-dim); margin-top:6px;}
+  #wx-feels b{color:var(--text); font-weight:600;}
+
   /* ---- forecast ---- */
-  #forecast{display:grid; grid-template-columns:repeat(5,1fr); gap:10px;}
-  .fday{text-align:center; padding:6px 4px;}
-  .fday .d{font-size:12px; font-weight:700; letter-spacing:.5px; color:var(--text-dim); margin-bottom:10px;}
-  .fday .ic{font-size:30px; margin-bottom:10px;}
-  .fday .hi{font-size:19px; font-weight:700;}
-  .fday .lo{font-size:14px; color:var(--text-dim); margin-top:2px;}
-  .fday .pop{display:flex; align-items:center; justify-content:center; gap:4px; font-size:12px; color:var(--blue); margin-top:8px;}
-  .fday .pop svg{width:11px; height:11px;}
+  #forecast{display:grid; grid-template-columns:repeat(10,1fr); gap:8px;}
+  .fday{text-align:center; padding:6px 2px;}
+  .fday .d{font-size:11px; font-weight:700; letter-spacing:.3px; color:var(--text-dim); margin-bottom:8px;}
+  .fday .ic{font-size:24px; margin-bottom:8px;}
+  .fday .hi{font-size:16px; font-weight:700;}
+  .fday .lo{font-size:12px; color:var(--text-dim); margin-top:2px;}
+  .fday .feels{font-size:10px; color:var(--text-faint); margin-top:4px;}
+  .fday .pop{display:flex; align-items:center; justify-content:center; gap:3px; font-size:10px; color:var(--blue); margin-top:6px;}
+  .fday .pop svg{width:10px; height:10px;}
+
+  @media (max-width: 1100px){
+    #forecast{grid-template-columns:repeat(5,1fr); row-gap:16px;}
+  }
 
   /* ---- calendar ---- */
   #cal-date{font-size:13px; color:var(--blue); font-weight:600; margin-bottom:14px;}
@@ -227,6 +235,7 @@
         <div>
           <div id="wx-temp">--°</div>
           <div id="wx-cond">Loading forecast…</div>
+          <div id="wx-feels">Feels like <b>--°</b></div>
         </div>
       </div>
       <div id="wx-stats">
@@ -262,7 +271,7 @@
       <div class="card-head">
         <div class="card-title">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18"/></svg>
-          5-DAY FORECAST
+          10-DAY FORECAST
         </div>
       </div>
       <div id="forecast"></div>
@@ -500,9 +509,9 @@ const LAT = 42.9058, LON = -76.7594, TIMEZONE = "America/New_York";
 async function loadWeather(){
   try{
     const url = `https://api.open-meteo.com/v1/forecast?latitude=${LAT}&longitude=${LON}`+
-      `&current=temperature_2m,weather_code,wind_speed_10m,relative_humidity_2m,pressure_msl`+
-      `&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,sunrise,sunset`+
-      `&temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch&timezone=${encodeURIComponent(TIMEZONE)}`;
+      `&current=temperature_2m,apparent_temperature,weather_code,wind_speed_10m,relative_humidity_2m,pressure_msl`+
+      `&daily=weather_code,temperature_2m_max,temperature_2m_min,apparent_temperature_max,apparent_temperature_min,precipitation_probability_max,sunrise,sunset`+
+      `&forecast_days=10&temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch&timezone=${encodeURIComponent(TIMEZONE)}`;
     const res = await fetch(url); const data = await res.json();
     const c = data.current;
     window.SIM.weather = { tempF: c.temperature_2m, code: c.weather_code, cloudFactor: cloudFactorForCode(c.weather_code) };
@@ -515,13 +524,18 @@ async function loadWeather(){
     document.getElementById("wx-press").textContent = (c.pressure_msl*0.02953).toFixed(2)+" in";
     document.getElementById("h-temp").textContent = Math.round(c.temperature_2m)+"°F";
 
+    // feels-like: label as Heat Index when hot, Wind Chill when cold, else just "Feels Like"
+    const feelsLabel = c.temperature_2m >= 80 ? "Heat Index" : (c.temperature_2m <= 50 ? "Wind Chill" : "Feels Like");
+    document.getElementById("wx-feels").innerHTML = `${feelsLabel} <b>${Math.round(c.apparent_temperature)}°</b>`;
+
     const d = data.daily;
     const fmt = iso => new Date(iso).toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"});
     document.getElementById("wx-sunrise").textContent = fmt(d.sunrise[0]);
     document.getElementById("wx-sunset").textContent = fmt(d.sunset[0]);
 
     const el = document.getElementById("forecast"); el.innerHTML="";
-    for(let i=0;i<5;i++){
+    const dayCount = Math.min(10, d.time.length);
+    for(let i=0;i<dayCount;i++){
       const date = new Date(d.time[i]+"T12:00:00");
       const label = i===0 ? "TODAY" : date.toLocaleDateString("en-US",{weekday:"short"}).toUpperCase();
       el.innerHTML += `<div class="fday">
@@ -529,6 +543,7 @@ async function loadWeather(){
         <div class="ic">${wIcon(d.weather_code[i])}</div>
         <div class="hi">${Math.round(d.temperature_2m_max[i])}°</div>
         <div class="lo">${Math.round(d.temperature_2m_min[i])}°</div>
+        <div class="feels">Feels ${Math.round(d.apparent_temperature_max[i])}°</div>
         <div class="pop"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2s6 7 6 11a6 6 0 1 1-12 0c0-4 6-11 6-11Z"/></svg>${d.precipitation_probability_max[i]}%</div>
       </div>`;
     }
