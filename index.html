@@ -192,7 +192,7 @@
       </svg>
       <h1>HOME</h1>
       <span style="font-size:10px; font-weight:700; letter-spacing:1.5px; color:var(--text-faint); border:1px solid var(--line); border-radius:5px; padding:4px 8px; text-transform:uppercase; margin-left:4px;">
-        Simulated Data
+        Live Weather · Simulated Rest
       </span>
     </div>
     <div id="hstats">
@@ -441,13 +441,12 @@
 
 <script>
 /* ==================================================================
-   SIMULATION MODE — every external connection below (weather API,
-   Apple Calendar, Enphase Enlighten, Emporia telemetry) is mocked with
-   locally-generated data. Nothing on this page makes a network call.
-   The simulated weather (cloud cover, temperature) now drives the
-   solar and home-energy simulations too, so a cloudy/rainy day pulls
-   down solar output and a cold/hot day adds heating or AC load.
-   Search "SIMULATED" to find each mock and swap in a real API later.
+   SIMULATION MODE — Calendar, Solar, and Emporia are mocked with
+   locally-generated data (no network calls). Weather is LIVE via
+   Open-Meteo — it needs no key or backend, so it's wired up for real
+   and drives the simulated solar/home-energy panels (cloud cover
+   pulls down solar output, cold/hot temps add heating/AC load).
+   Search "SIMULATED" to find each remaining mock.
    ================================================================== */
 
 function tick(){
@@ -495,58 +494,50 @@ function cloudFactorForCode(code){
   return 0.8;
 }
 
-// SIMULATED weather generator — replace with a real fetch() to
-// api.open-meteo.com (or any weather API) when you're ready to go live.
-const WX_CODES_FAIR = [0,1,2];
-function seededRandom(seed){ // small deterministic PRNG so today's data is stable on reload
-  let s = seed;
-  return ()=>{ s = (s*9301+49297)%233280; return s/233280; };
-}
-function simulateWeather(){
-  const now = new Date();
-  const dayOfYear = Math.floor((now - new Date(now.getFullYear(),0,0))/86400000);
-  const hFloat = now.getHours() + now.getMinutes()/60;
+// LIVE weather via Open-Meteo (no API key needed) — this is the one panel
+// that doesn't need a backend/CORS proxy, so it's wired up for real.
+const LAT = 42.9058, LON = -76.7594, TIMEZONE = "America/New_York";
+async function loadWeather(){
+  try{
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${LAT}&longitude=${LON}`+
+      `&current=temperature_2m,weather_code,wind_speed_10m,relative_humidity_2m,pressure_msl`+
+      `&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,sunrise,sunset`+
+      `&temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch&timezone=${encodeURIComponent(TIMEZONE)}`;
+    const res = await fetch(url); const data = await res.json();
+    const c = data.current;
+    window.SIM.weather = { tempF: c.temperature_2m, code: c.weather_code, cloudFactor: cloudFactorForCode(c.weather_code) };
 
-  // rough seasonal baseline for Cayuga, NY, plus a smooth time-of-day curve
-  const seasonal = 45 + 30*Math.sin((dayOfYear-100)/365*2*Math.PI);
-  const hourAdj = 8*Math.sin(((hFloat-6)/24)*2*Math.PI);
-  const nowTemp = Math.round(seasonal + hourAdj + (Math.random()*4-2)); // live jitter each refresh
+    document.getElementById("wx-icon").textContent = wIcon(c.weather_code);
+    document.getElementById("wx-temp").textContent = Math.round(c.temperature_2m)+"°F";
+    document.getElementById("wx-cond").textContent = wText(c.weather_code);
+    document.getElementById("wx-hum").textContent = c.relative_humidity_2m+"%";
+    document.getElementById("wx-wind").textContent = Math.round(c.wind_speed_10m)+" mph";
+    document.getElementById("wx-press").textContent = (c.pressure_msl*0.02953).toFixed(2)+" in";
+    document.getElementById("h-temp").textContent = Math.round(c.temperature_2m)+"°F";
 
-  // condition changes every ~15 min rather than being pinned for the whole hour
-  const codeSeed = seededRandom(dayOfYear*97 + Math.floor(hFloat*4));
-  const nowCode = WX_CODES_FAIR[Math.floor(codeSeed()*WX_CODES_FAIR.length)];
-  window.SIM.weather = { tempF: nowTemp, code: nowCode, cloudFactor: cloudFactorForCode(nowCode) };
+    const d = data.daily;
+    const fmt = iso => new Date(iso).toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"});
+    document.getElementById("wx-sunrise").textContent = fmt(d.sunrise[0]);
+    document.getElementById("wx-sunset").textContent = fmt(d.sunset[0]);
 
-  document.getElementById("wx-icon").textContent = wIcon(nowCode);
-  document.getElementById("wx-temp").textContent = nowTemp+"°F";
-  document.getElementById("wx-cond").textContent = wText(nowCode);
-  document.getElementById("wx-hum").textContent = Math.round(40+Math.random()*30)+"%";
-  document.getElementById("wx-wind").textContent = Math.round(2+Math.random()*10)+" mph";
-  document.getElementById("wx-press").textContent = (29.7+Math.random()*0.7).toFixed(2)+" in";
-  document.getElementById("h-temp").textContent = nowTemp+"°F";
-  document.getElementById("wx-sunrise").textContent = "5:47 AM";
-  document.getElementById("wx-sunset").textContent = "8:21 PM";
-
-  const codes = [0,1,2,3,61,71,95];
-  const el = document.getElementById("forecast"); el.innerHTML="";
-  for(let i=0;i<5;i++){
-    const date = new Date(); date.setDate(date.getDate()+i);
-    const label = i===0 ? "TODAY" : date.toLocaleDateString("en-US",{weekday:"short"}).toUpperCase();
-    const drnd = seededRandom(dayOfYear*31 + i*7); // stable per day — forecast shouldn't jitter every refresh
-    const code = codes[Math.floor(drnd()*codes.length)];
-    const hi = Math.round(seasonal + 6 + drnd()*8);
-    const lo = Math.round(seasonal - 8 + drnd()*6);
-    const pop = code>=61 ? Math.round(30+drnd()*60) : Math.round(drnd()*20);
-    el.innerHTML += `<div class="fday">
-      <div class="d">${label}</div>
-      <div class="ic">${wIcon(code)}</div>
-      <div class="hi">${hi}°</div>
-      <div class="lo">${lo}°</div>
-      <div class="pop"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2s6 7 6 11a6 6 0 1 1-12 0c0-4 6-11 6-11Z"/></svg>${pop}%</div>
-    </div>`;
+    const el = document.getElementById("forecast"); el.innerHTML="";
+    for(let i=0;i<5;i++){
+      const date = new Date(d.time[i]+"T12:00:00");
+      const label = i===0 ? "TODAY" : date.toLocaleDateString("en-US",{weekday:"short"}).toUpperCase();
+      el.innerHTML += `<div class="fday">
+        <div class="d">${label}</div>
+        <div class="ic">${wIcon(d.weather_code[i])}</div>
+        <div class="hi">${Math.round(d.temperature_2m_max[i])}°</div>
+        <div class="lo">${Math.round(d.temperature_2m_min[i])}°</div>
+        <div class="pop"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2s6 7 6 11a6 6 0 1 1-12 0c0-4 6-11 6-11Z"/></svg>${d.precipitation_probability_max[i]}%</div>
+      </div>`;
+    }
+  }catch(e){
+    document.getElementById("wx-cond").textContent = "Weather unavailable";
+    console.error(e);
   }
 }
-simulateWeather(); setInterval(()=>{ simulateWeather(); if(typeof drawSolarCurve==="function") drawSolarCurve(); }, 15*1000);
+loadWeather(); setInterval(()=>{ loadWeather(); if(typeof drawSolarCurve==="function") drawSolarCurve(); }, 15*60*1000);
 
 // SIMULATED calendar — replace with a real iCloud/Apple Calendar feed
 // (a public "webcal" ICS link fetched through a small CORS proxy, or
