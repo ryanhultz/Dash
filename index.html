@@ -111,6 +111,18 @@
     #forecast{grid-template-columns:repeat(5,1fr); row-gap:16px;}
   }
 
+  /* ---- hourly forecast ---- */
+  #hourly{display:grid; grid-template-columns:repeat(12,1fr); gap:8px;}
+  .hcell{text-align:center; padding:6px 2px;}
+  .hcell .t{font-size:11px; font-weight:700; color:var(--text-dim); margin-bottom:8px;}
+  .hcell .ic{font-size:22px; margin-bottom:8px;}
+  .hcell .v{font-size:15px; font-weight:700;}
+  .hcell .pop{display:flex; align-items:center; justify-content:center; gap:3px; font-size:10px; color:var(--blue); margin-top:6px;}
+  .hcell .pop svg{width:10px; height:10px;}
+  @media (max-width: 1100px){
+    #hourly{grid-template-columns:repeat(6,1fr); row-gap:16px;}
+  }
+
   /* ---- calendar ---- */
   #cal-date{font-size:13px; color:var(--blue); font-weight:600; margin-bottom:14px;}
   #cal-today{
@@ -282,6 +294,17 @@
           <div class="l" style="margin-left:21px;">Sunset</div>
         </div>
       </div>
+    </div>
+
+    <!-- 12-HOUR FORECAST -->
+    <div class="card">
+      <div class="card-head">
+        <div class="card-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+          12-HOUR FORECAST
+        </div>
+      </div>
+      <div id="hourly"></div>
     </div>
 
     <!-- 5-DAY FORECAST -->
@@ -529,6 +552,7 @@ async function loadWeather(){
   try{
     const url = `https://api.open-meteo.com/v1/forecast?latitude=${LAT}&longitude=${LON}`+
       `&current=temperature_2m,apparent_temperature,weather_code,wind_speed_10m,relative_humidity_2m,pressure_msl`+
+      `&hourly=temperature_2m,weather_code,precipitation_probability`+
       `&daily=weather_code,temperature_2m_max,temperature_2m_min,apparent_temperature_max,apparent_temperature_min,precipitation_probability_max,sunrise,sunset`+
       `&forecast_days=10&temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch&timezone=${encodeURIComponent(TIMEZONE)}`;
     const res = await fetch(url); const data = await res.json();
@@ -551,6 +575,23 @@ async function loadWeather(){
     const fmt = iso => new Date(iso).toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"});
     document.getElementById("wx-sunrise").textContent = fmt(d.sunrise[0]);
     document.getElementById("wx-sunset").textContent = fmt(d.sunset[0]);
+
+    // hourly forecast — find the current hour in the response, take the next 12
+    const hourly = data.hourly;
+    const nowHourIso = new Date().toISOString().slice(0,13); // "YYYY-MM-DDTHH"
+    let startIdx = hourly.time.findIndex(t => t.slice(0,13) === nowHourIso);
+    if(startIdx === -1) startIdx = 0;
+    const hEl = document.getElementById("hourly"); hEl.innerHTML = "";
+    for(let i=startIdx; i<startIdx+12 && i<hourly.time.length; i++){
+      const hDate = new Date(hourly.time[i]);
+      const label = i===startIdx ? "NOW" : hDate.toLocaleTimeString("en-US",{hour:"numeric"}).replace(" ","");
+      hEl.innerHTML += `<div class="hcell">
+        <div class="t">${label}</div>
+        <div class="ic">${wIcon(hourly.weather_code[i])}</div>
+        <div class="v">${Math.round(hourly.temperature_2m[i])}°</div>
+        <div class="pop"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2s6 7 6 11a6 6 0 1 1-12 0c0-4 6-11 6-11Z"/></svg>${hourly.precipitation_probability[i]}%</div>
+      </div>`;
+    }
 
     const el = document.getElementById("forecast"); el.innerHTML="";
     const dayCount = Math.min(10, d.time.length);
