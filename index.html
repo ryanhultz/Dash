@@ -143,25 +143,23 @@
   .leaflet-control-zoom a{ background:var(--panel-alt) !important; color:var(--text) !important; border-color:var(--line) !important; }
 
   /* ---- forecast ---- */
-  #forecast{display:grid; grid-template-columns:repeat(10,1fr); gap:8px;}
-  .fday{text-align:center; padding:6px 2px;}
-  .fday .d{font-size:11px; font-weight:700; letter-spacing:.3px; color:var(--text-dim); margin-bottom:8px;}
-  .fday .ic{font-size:24px; margin-bottom:8px;}
+  #forecast{display:grid; grid-template-columns:repeat(5,1fr); gap:10px;}
+  .fday{text-align:center; padding:6px 4px;}
+  .fday .d{font-size:12px; font-weight:700; letter-spacing:.3px; color:var(--text-dim); margin-bottom:8px;}
+  .fday .ic{font-size:24px; margin-bottom:6px;}
+  .fday .cond{font-size:10px; color:var(--text-faint); margin-bottom:6px; min-height:12px;}
   .fday .hi{font-size:16px; font-weight:700;}
   .fday .lo{font-size:12px; color:var(--text-dim); margin-top:2px;}
   .fday .feels{font-size:10px; color:var(--text-faint); margin-top:4px;}
   .fday .pop{display:flex; align-items:center; justify-content:center; gap:3px; font-size:10px; color:var(--blue); margin-top:6px;}
   .fday .pop svg{width:10px; height:10px;}
 
-  @media (max-width: 1100px){
-    #forecast{grid-template-columns:repeat(5,1fr); row-gap:16px;}
-  }
-
   /* ---- hourly forecast ---- */
   #hourly{display:grid; grid-template-columns:repeat(12,1fr); gap:8px;}
   .hcell{text-align:center; padding:6px 2px;}
   .hcell .t{font-size:11px; font-weight:700; color:var(--text-dim); margin-bottom:8px;}
-  .hcell .ic{font-size:22px; margin-bottom:8px;}
+  .hcell .ic{font-size:22px; margin-bottom:6px;}
+  .hcell .cond{font-size:9px; color:var(--text-faint); margin-bottom:6px; min-height:11px; line-height:1.2;}
   .hcell .v{font-size:15px; font-weight:700;}
   .hcell .pop{display:flex; align-items:center; justify-content:center; gap:3px; font-size:10px; color:var(--blue); margin-top:6px;}
   .hcell .pop svg{width:10px; height:10px;}
@@ -362,7 +360,7 @@
       <div class="card-head">
         <div class="card-title">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18"/></svg>
-          10-DAY FORECAST
+          5-DAY FORECAST
         </div>
       </div>
       <div id="forecast"></div>
@@ -717,7 +715,7 @@ async function loadWeather(){
       `&current=temperature_2m,apparent_temperature,weather_code,wind_speed_10m,relative_humidity_2m,pressure_msl,is_day`+
       `&hourly=temperature_2m,weather_code,precipitation_probability,is_day`+
       `&daily=weather_code,temperature_2m_max,temperature_2m_min,apparent_temperature_max,apparent_temperature_min,precipitation_probability_max,sunrise,sunset`+
-      `&forecast_days=10&temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch&timezone=${encodeURIComponent(TIMEZONE)}`;
+      `&forecast_days=5&temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch&timezone=${encodeURIComponent(TIMEZONE)}`;
     const res = await fetch(url); const data = await res.json();
     const c = data.current;
     window.SIM.weather = { tempF: c.temperature_2m, code: c.weather_code, cloudFactor: cloudFactorForCode(c.weather_code) };
@@ -752,19 +750,21 @@ async function loadWeather(){
       hEl.innerHTML += `<div class="hcell${isDay ? "" : " night"}">
         <div class="t">${label}</div>
         <div class="ic">${weatherIconSVG(hourly.weather_code[i], isDay, "wicon-md")}</div>
+        <div class="cond">${wText(hourly.weather_code[i])}</div>
         <div class="v">${Math.round(hourly.temperature_2m[i])}°</div>
         <div class="pop"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2s6 7 6 11a6 6 0 1 1-12 0c0-4 6-11 6-11Z"/></svg>${hourly.precipitation_probability[i]}%</div>
       </div>`;
     }
 
     const el = document.getElementById("forecast"); el.innerHTML="";
-    const dayCount = Math.min(10, d.time.length);
+    const dayCount = Math.min(5, d.time.length);
     for(let i=0;i<dayCount;i++){
       const date = new Date(d.time[i]+"T12:00:00");
       const label = i===0 ? "TODAY" : date.toLocaleDateString("en-US",{weekday:"short"}).toUpperCase();
       el.innerHTML += `<div class="fday">
         <div class="d">${label}</div>
         <div class="ic">${weatherIconSVG(d.weather_code[i], 1, "wicon-md")}</div>
+        <div class="cond">${wText(d.weather_code[i])}</div>
         <div class="hi">${Math.round(d.temperature_2m_max[i])}°</div>
         <div class="lo">${Math.round(d.temperature_2m_min[i])}°</div>
         <div class="feels">Feels ${Math.round(d.apparent_temperature_max[i])}°</div>
