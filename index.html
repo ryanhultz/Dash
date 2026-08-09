@@ -96,6 +96,25 @@
   #wx-feels{font-size:13px; color:var(--text-dim); margin-top:6px;}
   #wx-feels b{color:var(--text); font-weight:600;}
 
+  /* ---- animated weather icons ---- */
+  @keyframes wa-spin{ to{ transform:rotate(360deg); } }
+  @keyframes wa-drift{ 0%,100%{ transform:translateX(-2px); } 50%{ transform:translateX(2px); } }
+  @keyframes wa-fall{ 0%{ transform:translateY(-4px); opacity:0; } 25%{ opacity:1; } 100%{ transform:translateY(10px); opacity:0; } }
+  @keyframes wa-fall-sway{ 0%{ transform:translate(0,-4px); opacity:0; } 25%{ opacity:1; } 50%{ transform:translate(3px,3px); } 100%{ transform:translate(-2px,10px); opacity:0; } }
+  @keyframes wa-twinkle{ 0%,100%{ opacity:.25; } 50%{ opacity:1; } }
+  @keyframes wa-flash{ 0%,88%,100%{ opacity:.25; } 91%,95%{ opacity:1; } }
+  @keyframes wa-mistfade{ 0%,100%{ opacity:.25; } 50%{ opacity:.65; } }
+  .wa-rays{ transform-origin:32px 32px; animation:wa-spin 14s linear infinite; }
+  .wa-cloud{ animation:wa-drift 6s ease-in-out infinite; }
+  .wa-cloud.slow{ animation-duration:9s; animation-delay:.5s; }
+  .wa-drop{ animation:wa-fall 1s linear infinite; }
+  .wa-flake{ animation:wa-fall-sway 3.2s linear infinite; }
+  .wa-twinkle{ animation:wa-twinkle 2.2s ease-in-out infinite; }
+  .wa-bolt{ animation:wa-flash 2.6s infinite; }
+  .wa-fog{ animation:wa-mistfade 3s ease-in-out infinite; }
+  .wicon-lg{ width:64px; height:64px; }
+  .wicon-md{ width:30px; height:30px; }
+
   /* ---- forecast ---- */
   #forecast{display:grid; grid-template-columns:repeat(10,1fr); gap:8px;}
   .fday{text-align:center; padding:6px 2px;}
@@ -119,6 +138,8 @@
   .hcell .v{font-size:15px; font-weight:700;}
   .hcell .pop{display:flex; align-items:center; justify-content:center; gap:3px; font-size:10px; color:var(--blue); margin-top:6px;}
   .hcell .pop svg{width:10px; height:10px;}
+  .hcell.night{background:rgba(91,141,239,0.06); border-radius:8px;}
+  .hcell.night .t{color:var(--blue);}
   @media (max-width: 1100px){
     #hourly{grid-template-columns:repeat(6,1fr); row-gap:16px;}
   }
@@ -508,10 +529,10 @@ function tick(){
 }
 tick(); setInterval(tick,1000);
 
-function wIcon(c){
-  if(c===0) return "☀️";
-  if(c===1) return "🌤️";
-  if(c===2) return "⛅";
+function wIcon(c, isDay=1){
+  if(c===0) return isDay ? "☀️" : "🌙";
+  if(c===1) return isDay ? "🌤️" : "🌙";
+  if(c===2) return isDay ? "⛅" : "☁️";
   if(c===3) return "☁️";
   if([45,48].includes(c)) return "🌫️";
   if([51,53,55,56,57].includes(c)) return "🌦️";
@@ -519,6 +540,68 @@ function wIcon(c){
   if([71,73,75,77,85,86].includes(c)) return "🌨️";
   if([95,96,99].includes(c)) return "⛈️";
   return "—";
+}
+
+// Animated SVG weather icons — replaces the static emoji from wIcon() above.
+// Reuses wIcon()'s condition buckets, just renders motion instead of a glyph.
+function weatherIconSVG(code, isDay=1, cls="wicon-lg"){
+  const sun = (r=10, cx=32, cy=32) => `
+    <g class="wa-rays">
+      <g stroke="var(--yellow)" stroke-width="3" stroke-linecap="round">
+        <line x1="${cx}" y1="${cy-24}" x2="${cx}" y2="${cy-18}"/>
+        <line x1="${cx}" y1="${cy+18}" x2="${cx}" y2="${cy+24}"/>
+        <line x1="${cx-24}" y1="${cy}" x2="${cx-18}" y2="${cy}"/>
+        <line x1="${cx+18}" y1="${cy}" x2="${cx+24}" y2="${cy}"/>
+        <line x1="${cx-17}" y1="${cy-17}" x2="${cx-13}" y2="${cy-13}"/>
+        <line x1="${cx+13}" y1="${cy+13}" x2="${cx+17}" y2="${cy+17}"/>
+        <line x1="${cx-17}" y1="${cy+17}" x2="${cx-13}" y2="${cy+13}"/>
+        <line x1="${cx+13}" y1="${cy-13}" x2="${cx+17}" y2="${cy-17}"/>
+      </g>
+    </g>
+    <circle cx="${cx}" cy="${cy}" r="${r}" fill="var(--yellow)"/>`;
+  const moon = (x=32, y=32, r=11) => `
+    <path d="M${x+8} ${y-12}a14 14 0 1 0 3 27 11 11 0 0 1-3-27Z" fill="#D9DEE8"/>
+    <circle class="wa-twinkle" cx="${x-16}" cy="${y-16}" r="1.4" fill="#fff" style="animation-delay:0s"/>
+    <circle class="wa-twinkle" cx="${x-20}" cy="${y-2}" r="1" fill="#fff" style="animation-delay:.7s"/>
+    <circle class="wa-twinkle" cx="${x-12}" cy="${y+14}" r="1.2" fill="#fff" style="animation-delay:1.3s"/>`;
+  const cloud = (x, y, scale=1, extraClass="") => `
+    <g class="wa-cloud ${extraClass}" transform="translate(${x} ${y}) scale(${scale})">
+      <path d="M14 34a9 9 0 0 1 9-9 11 11 0 0 1 21-3 8 8 0 0 1-1 16H16a7 7 0 0 1-2-4Z" fill="var(--text-dim)"/>
+    </g>`;
+  const fog = () => [0,1,2,3].map(i =>
+    `<line class="wa-fog" x1="10" y1="${18+i*10}" x2="54" y2="${18+i*10}" stroke="var(--text-dim)" stroke-width="3" stroke-linecap="round" style="animation-delay:${i*.4}s"/>`
+  ).join("");
+  const drops = (n=3, x0=20, y0=40) => Array.from({length:n}).map((_,i) =>
+    `<line class="wa-drop" x1="${x0+i*9}" y1="${y0}" x2="${x0+i*9-2}" y2="${y0+7}" stroke="var(--blue)" stroke-width="2.5" stroke-linecap="round" style="animation-delay:${i*.25}s"/>`
+  ).join("");
+  const flakes = (n=3, x0=20, y0=40) => Array.from({length:n}).map((_,i) =>
+    `<circle class="wa-flake" cx="${x0+i*9}" cy="${y0}" r="2" fill="#fff" style="animation-delay:${i*.4}s"/>`
+  ).join("");
+  const bolt = () => `<path class="wa-bolt" d="M34 30 24 46h8l-3 12 15-19h-9l4-9Z" fill="var(--yellow)"/>`;
+
+  let inner;
+  if(code===0){
+    inner = isDay ? sun() : moon();
+  } else if(code===1){
+    inner = isDay ? sun(8,26,26) + cloud(14,20,0.75) : moon(26,26,9) + cloud(14,20,0.75);
+  } else if(code===2){
+    inner = (isDay ? sun(7,24,22) : moon(24,22,8)) + cloud(10,18,0.95);
+  } else if(code===3){
+    inner = cloud(4,14,0.85) + cloud(14,24,0.95,"slow");
+  } else if([45,48].includes(code)){
+    inner = cloud(10,10,0.7) + fog();
+  } else if([51,53,55,56,57].includes(code)){
+    inner = cloud(10,14,0.95) + drops(2,26,42);
+  } else if([61,63,65,66,67,80,81,82].includes(code)){
+    inner = cloud(10,12,0.95) + drops(3,18,42);
+  } else if([71,73,75,77,85,86].includes(code)){
+    inner = cloud(10,12,0.95) + flakes(3,18,42);
+  } else if([95,96,99].includes(code)){
+    inner = cloud(10,10,0.95) + bolt();
+  } else {
+    inner = cloud(10,14,0.95);
+  }
+  return `<svg class="${cls}" viewBox="0 0 64 64" fill="none">${inner}</svg>`;
 }
 function wText(c){
   const m={0:"Clear",1:"Mostly Sunny",2:"Partly Cloudy",3:"Overcast",45:"Fog",48:"Freezing Fog",
@@ -551,15 +634,15 @@ const TIMEZONE = "America/New_York";
 async function loadWeather(){
   try{
     const url = `https://api.open-meteo.com/v1/forecast?latitude=${LAT}&longitude=${LON}`+
-      `&current=temperature_2m,apparent_temperature,weather_code,wind_speed_10m,relative_humidity_2m,pressure_msl`+
-      `&hourly=temperature_2m,weather_code,precipitation_probability`+
+      `&current=temperature_2m,apparent_temperature,weather_code,wind_speed_10m,relative_humidity_2m,pressure_msl,is_day`+
+      `&hourly=temperature_2m,weather_code,precipitation_probability,is_day`+
       `&daily=weather_code,temperature_2m_max,temperature_2m_min,apparent_temperature_max,apparent_temperature_min,precipitation_probability_max,sunrise,sunset`+
       `&forecast_days=10&temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch&timezone=${encodeURIComponent(TIMEZONE)}`;
     const res = await fetch(url); const data = await res.json();
     const c = data.current;
     window.SIM.weather = { tempF: c.temperature_2m, code: c.weather_code, cloudFactor: cloudFactorForCode(c.weather_code) };
 
-    document.getElementById("wx-icon").textContent = wIcon(c.weather_code);
+    document.getElementById("wx-icon").innerHTML = weatherIconSVG(c.weather_code, c.is_day, "wicon-lg");
     document.getElementById("wx-temp").textContent = Math.round(c.temperature_2m)+"°F";
     document.getElementById("wx-cond").textContent = wText(c.weather_code);
     document.getElementById("wx-hum").textContent = c.relative_humidity_2m+"%";
@@ -578,16 +661,17 @@ async function loadWeather(){
 
     // hourly forecast — find the current hour in the response, take the next 12
     const hourly = data.hourly;
-    const nowHourIso = new Date().toISOString().slice(0,13); // "YYYY-MM-DDTHH"
+    const nowHourIso = c.time.slice(0,13); // Open-Meteo's own local time, matches hourly.time's timezone
     let startIdx = hourly.time.findIndex(t => t.slice(0,13) === nowHourIso);
     if(startIdx === -1) startIdx = 0;
     const hEl = document.getElementById("hourly"); hEl.innerHTML = "";
     for(let i=startIdx; i<startIdx+12 && i<hourly.time.length; i++){
       const hDate = new Date(hourly.time[i]);
       const label = i===startIdx ? "NOW" : hDate.toLocaleTimeString("en-US",{hour:"numeric"}).replace(" ","");
-      hEl.innerHTML += `<div class="hcell">
+      const isDay = hourly.is_day[i];
+      hEl.innerHTML += `<div class="hcell${isDay ? "" : " night"}">
         <div class="t">${label}</div>
-        <div class="ic">${wIcon(hourly.weather_code[i])}</div>
+        <div class="ic">${weatherIconSVG(hourly.weather_code[i], isDay, "wicon-md")}</div>
         <div class="v">${Math.round(hourly.temperature_2m[i])}°</div>
         <div class="pop"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2s6 7 6 11a6 6 0 1 1-12 0c0-4 6-11 6-11Z"/></svg>${hourly.precipitation_probability[i]}%</div>
       </div>`;
@@ -600,7 +684,7 @@ async function loadWeather(){
       const label = i===0 ? "TODAY" : date.toLocaleDateString("en-US",{weekday:"short"}).toUpperCase();
       el.innerHTML += `<div class="fday">
         <div class="d">${label}</div>
-        <div class="ic">${wIcon(d.weather_code[i])}</div>
+        <div class="ic">${weatherIconSVG(d.weather_code[i], 1, "wicon-md")}</div>
         <div class="hi">${Math.round(d.temperature_2m_max[i])}°</div>
         <div class="lo">${Math.round(d.temperature_2m_min[i])}°</div>
         <div class="feels">Feels ${Math.round(d.apparent_temperature_max[i])}°</div>
