@@ -125,6 +125,25 @@
   .wicon-lg{ width:64px; height:64px; }
   .wicon-md{ width:30px; height:30px; }
 
+  /* ---- radar ---- */
+  #radar-wrap{ position:relative; border-radius:10px; overflow:hidden; border:1px solid var(--line); }
+  #radar-map{ height:320px; width:100%; background:#0d1218; }
+  #radar-time{
+    position:absolute; bottom:10px; left:10px; z-index:500;
+    background:rgba(10,13,20,.75); color:var(--text); font-size:11px; font-weight:600;
+    padding:5px 10px; border-radius:6px; font-family:ui-monospace,'SF Mono',Consolas,monospace;
+    letter-spacing:.3px;
+  }
+  #radar-live{
+    position:absolute; top:10px; right:10px; z-index:500;
+    display:flex; align-items:center; gap:6px;
+    background:rgba(10,13,20,.75); font-size:10px; font-weight:700; letter-spacing:1px;
+    color:var(--text-dim); text-transform:uppercase; padding:5px 9px; border-radius:6px;
+  }
+  .leaflet-control-attribution{ background:rgba(10,13,20,.7) !important; color:var(--text-faint) !important; font-size:9px !important; }
+  .leaflet-control-attribution a{ color:var(--text-dim) !important; }
+  .leaflet-control-zoom a{ background:var(--panel-alt) !important; color:var(--text) !important; border-color:var(--line) !important; }
+
   /* ---- forecast ---- */
   #forecast{display:grid; grid-template-columns:repeat(10,1fr); gap:8px;}
   .fday{text-align:center; padding:6px 2px;}
@@ -225,6 +244,8 @@
 
   svg{overflow:visible;}
 </style>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 </head>
 <body>
 <div id="wrap">
@@ -347,6 +368,25 @@
         </div>
       </div>
       <div id="forecast"></div>
+    </div>
+
+    <!-- LIVE RADAR -->
+    <div class="card">
+      <div class="card-head">
+        <div class="card-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="2"/><path d="M12 2a10 10 0 0 1 10 10M12 6a6 6 0 0 1 6 6M12 2v4M12 18v4M2 12h4M18 12h4"/></svg>
+          LIVE RADAR
+        </div>
+        <a class="card-link" href="https://www.rainviewer.com/weather-radar-map-live.html" target="_blank" rel="noopener">
+          RainViewer
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17 17 7M8 7h9v9"/></svg>
+        </a>
+      </div>
+      <div id="radar-wrap">
+        <div id="radar-map"></div>
+        <div id="radar-live"><span class="dot pulse" style="background:var(--green); box-shadow:0 0 6px var(--green);"></span>Live</div>
+        <div id="radar-time">Loading radar…</div>
+      </div>
     </div>
   </div>
 
@@ -555,11 +595,14 @@ function wIcon(c, isDay=1){
 // Animated SVG weather icons — replaces the static emoji from wIcon() above.
 // Reuses wIcon()'s condition buckets, just renders motion instead of a glyph.
 let __waUid = 0;
-function weatherIconSVG(code, isDay=1, cls="wicon-lg"){
+function weatherIconSVG(code, isDay=1, cls="wicon-lg", windMph=null){
   const uid = __waUid++;
+  const rndDelay = (spread=10) => `${(-(Math.random()*spread)).toFixed(2)}s`;
+  // stronger wind = faster-drifting clouds; only kicks in when windMph is passed (current-conditions icon)
+  const cloudDur = windMph!=null ? Math.max(2.2, 7 - windMph*0.18).toFixed(2)+"s" : null;
   const sun = (r=10, cx=32, cy=32) => `
-    <circle class="wa-glow" cx="${cx}" cy="${cy}" r="${r+9}" fill="var(--yellow)" opacity=".3"/>
-    <g class="wa-rays">
+    <circle class="wa-glow" cx="${cx}" cy="${cy}" r="${r+9}" fill="var(--yellow)" opacity=".3" style="animation-delay:${rndDelay(3)}"/>
+    <g class="wa-rays" style="animation-delay:${rndDelay(16)}">
       <g stroke="var(--yellow)" stroke-width="3" stroke-linecap="round">
         <line x1="${cx}" y1="${cy-25}" x2="${cx}" y2="${cy-18}"/>
         <line x1="${cx}" y1="${cy+18}" x2="${cx}" y2="${cy+25}"/>
@@ -571,12 +614,12 @@ function weatherIconSVG(code, isDay=1, cls="wicon-lg"){
         <line x1="${cx+13}" y1="${cy-13}" x2="${cx+18}" y2="${cy-18}"/>
       </g>
     </g>
-    <g class="wa-sun-core">
+    <g class="wa-sun-core" style="animation-delay:${rndDelay(4)}">
       <circle cx="${cx}" cy="${cy}" r="${r}" fill="var(--yellow)"/>
       <circle cx="${cx-r*0.3}" cy="${cy-r*0.3}" r="${r*0.4}" fill="#fff" opacity=".35"/>
     </g>`;
   const moon = (x=32, y=32, r=11) => `
-    <circle class="wa-glow" cx="${x}" cy="${y}" r="${r+8}" fill="#8FA3D9" opacity=".22"/>
+    <circle class="wa-glow" cx="${x}" cy="${y}" r="${r+8}" fill="#8FA3D9" opacity=".22" style="animation-delay:${rndDelay(3)}"/>
     <path d="M${x+8} ${y-12}a14 14 0 1 0 3 27 11 11 0 0 1-3-27Z" fill="#D9DEE8"/>
     <circle cx="${x-1}" cy="${y-4}" r="1.6" fill="#B9C1D4" opacity=".7"/>
     <circle cx="${x+3}" cy="${y+5}" r="1" fill="#B9C1D4" opacity=".6"/>
@@ -585,8 +628,8 @@ function weatherIconSVG(code, isDay=1, cls="wicon-lg"){
     <circle class="wa-twinkle" cx="${x-13}" cy="${y+15}" r="1.2" fill="#fff" style="animation-delay:1.3s"/>
     <circle class="wa-twinkle" cx="${x-6}" cy="${y-22}" r=".8" fill="#fff" style="animation-delay:1.9s"/>`;
   const cloud = (x, y, scale=1, extraClass="") => `
-    <g class="wa-cloud ${extraClass}" transform="translate(${x} ${y}) scale(${scale})">
-      <g class="wa-cloud-bob">
+    <g class="wa-cloud ${extraClass}" style="animation-delay:${rndDelay(6)};${cloudDur?` animation-duration:${cloudDur};`:""}" transform="translate(${x} ${y}) scale(${scale})">
+      <g class="wa-cloud-bob" style="animation-delay:${rndDelay(3)}">
         <path d="M15 35a8 8 0 0 1 6-11 12 12 0 0 1 23-2 8 8 0 0 1 0 15Z" fill="#0F1620" opacity=".35"/>
         <path d="M14 34a9 9 0 0 1 9-9 11 11 0 0 1 21-3 8 8 0 0 1-1 16H16a7 7 0 0 1-2-4Z" fill="var(--text-dim)"/>
         <path d="M20 27a6 6 0 0 1 4-5 8 8 0 0 1 13-2" stroke="#fff" stroke-width="1.4" stroke-linecap="round" opacity=".25" fill="none"/>
@@ -680,7 +723,7 @@ async function loadWeather(){
     const c = data.current;
     window.SIM.weather = { tempF: c.temperature_2m, code: c.weather_code, cloudFactor: cloudFactorForCode(c.weather_code) };
 
-    document.getElementById("wx-icon").innerHTML = weatherIconSVG(c.weather_code, c.is_day, "wicon-lg");
+    document.getElementById("wx-icon").innerHTML = weatherIconSVG(c.weather_code, c.is_day, "wicon-lg", c.wind_speed_10m);
     document.getElementById("wx-temp").textContent = Math.round(c.temperature_2m)+"°F";
     document.getElementById("wx-cond").textContent = wText(c.weather_code);
     document.getElementById("wx-hum").textContent = c.relative_humidity_2m+"%";
@@ -864,6 +907,62 @@ window.SETTINGS = { rateKwh: 0.16 };
 updateEmporia();
 setInterval(updateEmporia, 5000);
 
+// ---- LIVE RADAR (RainViewer + Leaflet, dark CARTO basemap) ----
+let radarMap = null, radarLayers = [], radarFrameIdx = 0, radarTimer = null;
+function initRadar(){
+  if(typeof L === "undefined") { document.getElementById("radar-time").textContent = "Map library unavailable"; return; }
+  radarMap = L.map("radar-map", { zoomControl: true, attributionControl: true }).setView([LAT, LON], 7);
+  L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
+    attribution: '&copy; OpenStreetMap, &copy; CARTO',
+    maxZoom: 12, subdomains: "abcd"
+  }).addTo(radarMap);
+  loadRadarFrames();
+  setInterval(loadRadarFrames, 10*60*1000); // RainViewer refreshes data every ~10 min
+}
+async function loadRadarFrames(){
+  try{
+    const res = await fetch("https://api.rainviewer.com/public/weather-maps.json");
+    const data = await res.json();
+    const frames = (data.radar && data.radar.past) ? data.radar.past.slice(-8) : [];
+    if(!frames.length) return;
+
+    // clear old layers, add new ones (all hidden except the last/newest)
+    radarLayers.forEach(l => radarMap.removeLayer(l));
+    radarLayers = frames.map(f =>
+      L.tileLayer(`${data.host}${f.path}/256/{z}/{x}/{y}/2/1_1.png`, { opacity: 0, zIndex: 10 })
+    );
+    radarLayers.forEach(l => l.addTo(radarMap));
+    radarFrameIdx = radarLayers.length - 1;
+    showRadarFrame(radarFrameIdx);
+    document.getElementById("radar-frametimes") ; // no-op guard
+    window.__radarFrameTimes = frames.map(f => f.time);
+
+    if(radarTimer) clearInterval(radarTimer);
+    radarTimer = setInterval(()=>{
+      radarLayers[radarFrameIdx].setOpacity(0);
+      radarFrameIdx = (radarFrameIdx + 1) % radarLayers.length;
+      showRadarFrame(radarFrameIdx);
+    }, 600);
+  }catch(e){
+    document.getElementById("radar-time").textContent = "Radar unavailable";
+    console.error(e);
+  }
+}
+function showRadarFrame(i){
+  radarLayers[i].setOpacity(0.75);
+  const t = window.__radarFrameTimes && window.__radarFrameTimes[i];
+  if(t){
+    const isLatest = i === radarLayers.length - 1;
+    document.getElementById("radar-time").textContent =
+      (isLatest ? "Now · " : "") + new Date(t*1000).toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"});
+  }
+}
+if(document.readyState==="complete" || document.readyState==="interactive"){
+  setTimeout(initRadar, 0);
+} else {
+  document.addEventListener("DOMContentLoaded", initRadar);
+}
+
 // ---- SETTINGS PANEL ----
 const overlay = document.getElementById("settings-overlay");
 function openSettings(){
@@ -887,6 +986,7 @@ document.getElementById("settings-save").addEventListener("click", ()=>{
   closeSettings();
   updateEmporia();          // reflect new rate immediately
   if(locChanged) loadWeather(); // re-fetch weather for the new location
+  if(locChanged && radarMap) radarMap.setView([LAT, LON], 7);
 });
 </script>
 </body>
