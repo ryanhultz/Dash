@@ -99,19 +99,29 @@
   /* ---- animated weather icons ---- */
   @keyframes wa-spin{ to{ transform:rotate(360deg); } }
   @keyframes wa-drift{ 0%,100%{ transform:translateX(-2px); } 50%{ transform:translateX(2px); } }
-  @keyframes wa-fall{ 0%{ transform:translateY(-4px); opacity:0; } 25%{ opacity:1; } 100%{ transform:translateY(10px); opacity:0; } }
-  @keyframes wa-fall-sway{ 0%{ transform:translate(0,-4px); opacity:0; } 25%{ opacity:1; } 50%{ transform:translate(3px,3px); } 100%{ transform:translate(-2px,10px); opacity:0; } }
-  @keyframes wa-twinkle{ 0%,100%{ opacity:.25; } 50%{ opacity:1; } }
-  @keyframes wa-flash{ 0%,88%,100%{ opacity:.25; } 91%,95%{ opacity:1; } }
-  @keyframes wa-mistfade{ 0%,100%{ opacity:.25; } 50%{ opacity:.65; } }
-  .wa-rays{ transform-origin:32px 32px; animation:wa-spin 14s linear infinite; }
-  .wa-cloud{ animation:wa-drift 6s ease-in-out infinite; }
+  @keyframes wa-bob{ 0%,100%{ transform:translateY(0); } 50%{ transform:translateY(-2.5px); } }
+  @keyframes wa-pulse{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.07); } }
+  @keyframes wa-glow{ 0%,100%{ opacity:.3; } 50%{ opacity:.7; } }
+  @keyframes wa-fall{ 0%{ transform:translateY(-4px); opacity:0; } 25%{ opacity:1; } 100%{ transform:translateY(11px); opacity:0; } }
+  @keyframes wa-fall-sway{ 0%{ transform:translate(0,-4px) rotate(0deg); opacity:0; } 25%{ opacity:1; } 50%{ transform:translate(3px,3px) rotate(90deg); } 100%{ transform:translate(-2px,11px) rotate(180deg); opacity:0; } }
+  @keyframes wa-splash{ 0%,65%{ opacity:0; transform:scale(.3); } 78%{ opacity:.75; transform:scale(1); } 100%{ opacity:0; transform:scale(1.4); } }
+  @keyframes wa-twinkle{ 0%,100%{ opacity:.2; transform:scale(.85); } 50%{ opacity:1; transform:scale(1.15); } }
+  @keyframes wa-flash{ 0%,88%,100%{ opacity:.2; } 91%,95%{ opacity:1; } }
+  @keyframes wa-flash-glow{ 0%,88%,100%{ opacity:0; } 91%,95%{ opacity:.55; } }
+  @keyframes wa-mistfade{ 0%,100%{ opacity:.2; transform:translateX(-4px); } 50%{ opacity:.6; transform:translateX(4px); } }
+  .wa-rays{ transform-origin:32px 32px; animation:wa-spin 16s linear infinite; }
+  .wa-sun-core{ transform-origin:32px 32px; animation:wa-pulse 4s ease-in-out infinite; }
+  .wa-glow{ animation:wa-glow 3.2s ease-in-out infinite; }
+  .wa-cloud{ animation:wa-drift 6.5s ease-in-out infinite; }
   .wa-cloud.slow{ animation-duration:9s; animation-delay:.5s; }
+  .wa-cloud-bob{ animation:wa-bob 3.4s ease-in-out infinite; }
   .wa-drop{ animation:wa-fall 1s linear infinite; }
-  .wa-flake{ animation:wa-fall-sway 3.2s linear infinite; }
-  .wa-twinkle{ animation:wa-twinkle 2.2s ease-in-out infinite; }
+  .wa-splash{ animation:wa-splash 1s linear infinite; }
+  .wa-flake{ animation:wa-fall-sway 3.4s linear infinite; transform-box:fill-box; transform-origin:center; }
+  .wa-twinkle{ animation:wa-twinkle 2.4s ease-in-out infinite; transform-box:fill-box; transform-origin:center; }
   .wa-bolt{ animation:wa-flash 2.6s infinite; }
-  .wa-fog{ animation:wa-mistfade 3s ease-in-out infinite; }
+  .wa-flash-overlay{ animation:wa-flash-glow 2.6s infinite; }
+  .wa-fog{ animation:wa-mistfade 4s ease-in-out infinite; }
   .wicon-lg{ width:64px; height:64px; }
   .wicon-md{ width:30px; height:30px; }
 
@@ -231,7 +241,7 @@
         <path d="M12 2L22 21H2L12 2Z" fill="url(#logoGrad)"/>
         <path d="M12 9L16.5 17.5H7.5L12 9Z" fill="#0A0D14"/>
       </svg>
-      <h1>HOME</h1>
+      <h1>HOME <span style="font-size:12px; font-weight:600; color:var(--text-faint); font-family:ui-monospace,'SF Mono',Consolas,monospace; letter-spacing:.5px; vertical-align:middle; margin-left:2px;">v1.6.0</span></h1>
       <span style="font-size:10px; font-weight:700; letter-spacing:1.5px; color:var(--text-faint); border:1px solid var(--line); border-radius:5px; padding:4px 8px; text-transform:uppercase; margin-left:4px;">
         Live Weather · Simulated Rest
       </span>
@@ -544,46 +554,74 @@ function wIcon(c, isDay=1){
 
 // Animated SVG weather icons — replaces the static emoji from wIcon() above.
 // Reuses wIcon()'s condition buckets, just renders motion instead of a glyph.
+let __waUid = 0;
 function weatherIconSVG(code, isDay=1, cls="wicon-lg"){
+  const uid = __waUid++;
   const sun = (r=10, cx=32, cy=32) => `
+    <circle class="wa-glow" cx="${cx}" cy="${cy}" r="${r+9}" fill="var(--yellow)" opacity=".3"/>
     <g class="wa-rays">
       <g stroke="var(--yellow)" stroke-width="3" stroke-linecap="round">
-        <line x1="${cx}" y1="${cy-24}" x2="${cx}" y2="${cy-18}"/>
-        <line x1="${cx}" y1="${cy+18}" x2="${cx}" y2="${cy+24}"/>
-        <line x1="${cx-24}" y1="${cy}" x2="${cx-18}" y2="${cy}"/>
-        <line x1="${cx+18}" y1="${cy}" x2="${cx+24}" y2="${cy}"/>
-        <line x1="${cx-17}" y1="${cy-17}" x2="${cx-13}" y2="${cy-13}"/>
-        <line x1="${cx+13}" y1="${cy+13}" x2="${cx+17}" y2="${cy+17}"/>
-        <line x1="${cx-17}" y1="${cy+17}" x2="${cx-13}" y2="${cy+13}"/>
-        <line x1="${cx+13}" y1="${cy-13}" x2="${cx+17}" y2="${cy-17}"/>
+        <line x1="${cx}" y1="${cy-25}" x2="${cx}" y2="${cy-18}"/>
+        <line x1="${cx}" y1="${cy+18}" x2="${cx}" y2="${cy+25}"/>
+        <line x1="${cx-25}" y1="${cy}" x2="${cx-18}" y2="${cy}"/>
+        <line x1="${cx+18}" y1="${cy}" x2="${cx+25}" y2="${cy}"/>
+        <line x1="${cx-18}" y1="${cy-18}" x2="${cx-13}" y2="${cy-13}"/>
+        <line x1="${cx+13}" y1="${cy+13}" x2="${cx+18}" y2="${cy+18}"/>
+        <line x1="${cx-18}" y1="${cy+18}" x2="${cx-13}" y2="${cy+13}"/>
+        <line x1="${cx+13}" y1="${cy-13}" x2="${cx+18}" y2="${cy-18}"/>
       </g>
     </g>
-    <circle cx="${cx}" cy="${cy}" r="${r}" fill="var(--yellow)"/>`;
+    <g class="wa-sun-core">
+      <circle cx="${cx}" cy="${cy}" r="${r}" fill="var(--yellow)"/>
+      <circle cx="${cx-r*0.3}" cy="${cy-r*0.3}" r="${r*0.4}" fill="#fff" opacity=".35"/>
+    </g>`;
   const moon = (x=32, y=32, r=11) => `
+    <circle class="wa-glow" cx="${x}" cy="${y}" r="${r+8}" fill="#8FA3D9" opacity=".22"/>
     <path d="M${x+8} ${y-12}a14 14 0 1 0 3 27 11 11 0 0 1-3-27Z" fill="#D9DEE8"/>
-    <circle class="wa-twinkle" cx="${x-16}" cy="${y-16}" r="1.4" fill="#fff" style="animation-delay:0s"/>
-    <circle class="wa-twinkle" cx="${x-20}" cy="${y-2}" r="1" fill="#fff" style="animation-delay:.7s"/>
-    <circle class="wa-twinkle" cx="${x-12}" cy="${y+14}" r="1.2" fill="#fff" style="animation-delay:1.3s"/>`;
+    <circle cx="${x-1}" cy="${y-4}" r="1.6" fill="#B9C1D4" opacity=".7"/>
+    <circle cx="${x+3}" cy="${y+5}" r="1" fill="#B9C1D4" opacity=".6"/>
+    <circle class="wa-twinkle" cx="${x-18}" cy="${y-18}" r="1.4" fill="#fff" style="animation-delay:0s"/>
+    <circle class="wa-twinkle" cx="${x-22}" cy="${y-2}" r="1" fill="#fff" style="animation-delay:.7s"/>
+    <circle class="wa-twinkle" cx="${x-13}" cy="${y+15}" r="1.2" fill="#fff" style="animation-delay:1.3s"/>
+    <circle class="wa-twinkle" cx="${x-6}" cy="${y-22}" r=".8" fill="#fff" style="animation-delay:1.9s"/>`;
   const cloud = (x, y, scale=1, extraClass="") => `
     <g class="wa-cloud ${extraClass}" transform="translate(${x} ${y}) scale(${scale})">
-      <path d="M14 34a9 9 0 0 1 9-9 11 11 0 0 1 21-3 8 8 0 0 1-1 16H16a7 7 0 0 1-2-4Z" fill="var(--text-dim)"/>
+      <g class="wa-cloud-bob">
+        <path d="M15 35a8 8 0 0 1 6-11 12 12 0 0 1 23-2 8 8 0 0 1 0 15Z" fill="#0F1620" opacity=".35"/>
+        <path d="M14 34a9 9 0 0 1 9-9 11 11 0 0 1 21-3 8 8 0 0 1-1 16H16a7 7 0 0 1-2-4Z" fill="var(--text-dim)"/>
+        <path d="M20 27a6 6 0 0 1 4-5 8 8 0 0 1 13-2" stroke="#fff" stroke-width="1.4" stroke-linecap="round" opacity=".25" fill="none"/>
+      </g>
     </g>`;
   const fog = () => [0,1,2,3].map(i =>
-    `<line class="wa-fog" x1="10" y1="${18+i*10}" x2="54" y2="${18+i*10}" stroke="var(--text-dim)" stroke-width="3" stroke-linecap="round" style="animation-delay:${i*.4}s"/>`
+    `<line class="wa-fog" x1="8" y1="${17+i*10}" x2="56" y2="${17+i*10}" stroke="var(--text-dim)" stroke-width="3" stroke-linecap="round" style="animation-delay:${i*.5}s; animation-direction:${i%2?'reverse':'normal'};"/>`
   ).join("");
-  const drops = (n=3, x0=20, y0=40) => Array.from({length:n}).map((_,i) =>
-    `<line class="wa-drop" x1="${x0+i*9}" y1="${y0}" x2="${x0+i*9-2}" y2="${y0+7}" stroke="var(--blue)" stroke-width="2.5" stroke-linecap="round" style="animation-delay:${i*.25}s"/>`
+  const drops = (n=3, x0=20, y0=40) => Array.from({length:n}).map((_,i) => `
+    <line class="wa-drop" x1="${x0+i*9}" y1="${y0}" x2="${x0+i*9-2}" y2="${y0+7}" stroke="var(--blue)" stroke-width="2.5" stroke-linecap="round" style="animation-delay:${i*.28}s"/>
+    <ellipse class="wa-splash" cx="${x0+i*9-1}" cy="52" rx="3.5" ry="1.4" fill="none" stroke="var(--blue)" stroke-width="1.2" style="animation-delay:${i*.28}s"/>
+  `).join("");
+  const flakes = (n=3, x0=20, y0=40) => Array.from({length:n}).map((_,i) => `
+    <g class="wa-flake" style="animation-delay:${i*.45}s">
+      <g transform="translate(${x0+i*9} ${y0})">
+        <g stroke="#fff" stroke-width="1.1" stroke-linecap="round">
+          <line x1="-2.5" y1="0" x2="2.5" y2="0"/><line x1="0" y1="-2.5" x2="0" y2="2.5"/>
+          <line x1="-1.8" y1="-1.8" x2="1.8" y2="1.8"/><line x1="-1.8" y1="1.8" x2="1.8" y2="-1.8"/>
+        </g>
+      </g>
+    </g>`
   ).join("");
-  const flakes = (n=3, x0=20, y0=40) => Array.from({length:n}).map((_,i) =>
-    `<circle class="wa-flake" cx="${x0+i*9}" cy="${y0}" r="2" fill="#fff" style="animation-delay:${i*.4}s"/>`
-  ).join("");
-  const bolt = () => `<path class="wa-bolt" d="M34 30 24 46h8l-3 12 15-19h-9l4-9Z" fill="var(--yellow)"/>`;
+  const bolt = () => `
+    <rect class="wa-flash-overlay" x="0" y="0" width="64" height="64" rx="10" fill="#fff"/>
+    <path class="wa-bolt" d="M34 30 24 46h8l-3 12 15-19h-9l4-9Z" fill="var(--yellow)" filter="url(#wa-boltglow-${uid})"/>
+    <defs><filter id="wa-boltglow-${uid}" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="1.6" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter></defs>`;
 
   let inner;
   if(code===0){
     inner = isDay ? sun() : moon();
   } else if(code===1){
-    inner = isDay ? sun(8,26,26) + cloud(14,20,0.75) : moon(26,26,9) + cloud(14,20,0.75);
+    inner = (isDay ? sun(8,26,26) : moon(26,26,9)) + cloud(14,20,0.75);
   } else if(code===2){
     inner = (isDay ? sun(7,24,22) : moon(24,22,8)) + cloud(10,18,0.95);
   } else if(code===3){
@@ -597,7 +635,7 @@ function weatherIconSVG(code, isDay=1, cls="wicon-lg"){
   } else if([71,73,75,77,85,86].includes(code)){
     inner = cloud(10,12,0.95) + flakes(3,18,42);
   } else if([95,96,99].includes(code)){
-    inner = cloud(10,10,0.95) + bolt();
+    inner = cloud(10,10,0.95) + bolt() + drops(2,20,44);
   } else {
     inner = cloud(10,14,0.95);
   }
