@@ -104,9 +104,8 @@
   @keyframes wa-glow{ 0%,100%{ opacity:.3; } 50%{ opacity:.7; } }
   @keyframes wa-fall{ 0%{ transform:translateY(-4px); opacity:0; } 25%{ opacity:1; } 100%{ transform:translateY(11px); opacity:0; } }
   @keyframes wa-fall-sway{ 0%{ transform:translate(0,-4px) rotate(0deg); opacity:0; } 25%{ opacity:1; } 50%{ transform:translate(3px,3px) rotate(90deg); } 100%{ transform:translate(-2px,11px) rotate(180deg); opacity:0; } }
-  @keyframes wa-splash{ 0%,65%{ opacity:0; transform:scale(.3); } 78%{ opacity:.75; transform:scale(1); } 100%{ opacity:0; transform:scale(1.4); } }
   @keyframes wa-twinkle{ 0%,100%{ opacity:.2; transform:scale(.85); } 50%{ opacity:1; transform:scale(1.15); } }
-  @keyframes wa-flash{ 0%,86%,100%{ opacity:.4; transform:scale(1); } 89%{ opacity:1; transform:scale(1.18); } 92%{ opacity:.55; transform:scale(1.05); } 95%{ opacity:1; transform:scale(1.22); } }
+  @keyframes wa-flash{ 0%,86%,100%{ opacity:0; transform:scale(1); } 89%{ opacity:1; transform:scale(1.18); } 92%{ opacity:.15; transform:scale(1.05); } 95%{ opacity:1; transform:scale(1.22); } }
   @keyframes wa-spin-slow{ to{ transform:rotate(360deg); } }
   @keyframes wa-mistfade{ 0%,100%{ opacity:.2; transform:translateX(-4px); } 50%{ opacity:.6; transform:translateX(4px); } }
   .wa-rays{ transform-origin:32px 32px; animation:wa-spin 16s linear infinite; }
@@ -116,7 +115,7 @@
   .wa-cloud.slow{ animation-duration:9s; animation-delay:.5s; }
   .wa-cloud-bob{ animation:wa-bob 3.4s ease-in-out infinite; }
   .wa-drop{ animation:wa-fall 1s linear infinite; }
-  .wa-splash{ animation:wa-splash 1s linear infinite; }
+  .wa-flake{ animation:wa-fall-sway 3.2s linear infinite; }
   .wa-snowflake{ transform-box:fill-box; transform-origin:center; animation:wa-spin-slow 11s linear infinite; }
   .wa-twinkle{ animation:wa-twinkle 2.4s ease-in-out infinite; transform-box:fill-box; transform-origin:center; }
   .wa-bolt{ animation:wa-flash 2.6s infinite; transform-box:fill-box; transform-origin:center; }
@@ -599,8 +598,8 @@ function weatherIconSVG(code, isDay=1, cls="wicon-lg", windMph=null){
   const rndDelay = (spread=10) => `${(-(Math.random()*spread)).toFixed(2)}s`;
   // stronger wind = faster-drifting clouds; only kicks in when windMph is passed (current-conditions icon)
   const cloudDur = windMph!=null ? Math.max(2.2, 7 - windMph*0.18).toFixed(2)+"s" : null;
-  const sun = (r=10, cx=32, cy=32) => `
-    <circle class="wa-glow" cx="${cx}" cy="${cy}" r="${r+9}" fill="var(--yellow)" opacity=".3" style="animation-delay:${rndDelay(3)}"/>
+  const sun = (r=10, cx=32, cy=32, glow=true) => `
+    ${glow ? `<circle class="wa-glow" cx="${cx}" cy="${cy}" r="${r+9}" fill="var(--yellow)" opacity=".3" style="animation-delay:${rndDelay(3)}"/>` : ""}
     <g class="wa-rays" style="animation-delay:${rndDelay(16)}">
       <g stroke="var(--yellow)" stroke-width="3" stroke-linecap="round">
         <line x1="${cx}" y1="${cy-25}" x2="${cx}" y2="${cy-18}"/>
@@ -638,7 +637,6 @@ function weatherIconSVG(code, isDay=1, cls="wicon-lg", windMph=null){
   ).join("");
   const drops = (n=3, x0=20, y0=40) => Array.from({length:n}).map((_,i) => `
     <line class="wa-drop" x1="${x0+i*9}" y1="${y0}" x2="${x0+i*9-2}" y2="${y0+7}" stroke="var(--blue)" stroke-width="2.5" stroke-linecap="round" style="animation-delay:${i*.28}s"/>
-    <ellipse class="wa-splash" cx="${x0+i*9-1}" cy="52" rx="3.5" ry="1.4" fill="none" stroke="var(--blue)" stroke-width="1.2" style="animation-delay:${i*.28}s"/>
   `).join("");
   const snowflake = (cx=32, cy=32, r=17) => {
     const arm = () => `
@@ -650,6 +648,9 @@ function weatherIconSVG(code, isDay=1, cls="wicon-lg", windMph=null){
     const branches = [0,60,120].map(a => `<g transform="rotate(${a} ${cx} ${cy})">${arm()}</g>`).join("");
     return `<g class="wa-snowflake" style="animation-delay:${rndDelay(10)}">${branches}<circle cx="${cx}" cy="${cy}" r="2" fill="#fff"/></g>`;
   };
+  const smallFlakes = () => [[9,10],[54,13],[11,52],[52,50],[6,32]].map((p,i) => `
+    <circle class="wa-flake" cx="${p[0]}" cy="${p[1]}" r="1.5" fill="#fff" style="animation-delay:${i*.55}s"/>
+  `).join("");
   const bolt = () => `
     <path class="wa-bolt" d="M33 24 20 46h9l-4 18 21-26h-11l6-14Z" fill="#FFF3B0" filter="url(#wa-boltglow-${uid})"/>
     <defs><filter id="wa-boltglow-${uid}" x="-100%" y="-100%" width="300%" height="300%">
@@ -662,9 +663,9 @@ function weatherIconSVG(code, isDay=1, cls="wicon-lg", windMph=null){
   if(code===0){
     inner = isDay ? sun() : moon();
   } else if(code===1){
-    inner = (isDay ? sun(8,26,26) : moon(26,26,9)) + cloud(14,20,0.75);
+    inner = isDay ? cloud(14,20,0.75) + sun(8,26,26,false) : cloud(14,20,0.75) + moon(26,26,9);
   } else if(code===2){
-    inner = (isDay ? sun(7,24,22) : moon(24,22,8)) + cloud(10,18,0.95);
+    inner = isDay ? sun(7,24,22) + cloud(10,18,0.95) : cloud(10,18,0.95) + moon(24,22,8);
   } else if(code===3){
     inner = cloud(4,14,0.85) + cloud(14,24,0.95,"slow");
   } else if([45,48].includes(code)){
@@ -672,11 +673,11 @@ function weatherIconSVG(code, isDay=1, cls="wicon-lg", windMph=null){
   } else if([51,53,55,56,57].includes(code)){
     inner = cloud(10,14,0.95) + drops(2,26,42);
   } else if([61,63,65,66,67,80,81,82].includes(code)){
-    inner = cloud(10,12,0.95) + drops(3,18,42);
+    inner = cloud(10,12,0.95) + drops(4,16,42);
   } else if([71,73,75,77,85,86].includes(code)){
-    inner = snowflake();
+    inner = snowflake() + smallFlakes();
   } else if([95,96,99].includes(code)){
-    inner = cloud(10,10,0.95) + bolt() + drops(2,20,44);
+    inner = cloud(10,10,0.95) + bolt() + drops(4,16,42);
   } else {
     inner = cloud(10,14,0.95);
   }
