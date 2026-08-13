@@ -64,28 +64,6 @@
   .cg-solar{ grid-column:2/4; grid-row:3; display:flex; flex-direction:column; }
   .cg-emp{ grid-column:4; grid-row:3; display:flex; flex-direction:column; }
 
-  /* ---- mobile: stack everything, allow vertical scroll ---- */
-  @media (max-width:900px), (max-aspect-ratio:4/5){
-    html, body{ height:auto; overflow:auto; }
-    body{ padding:14px; }
-    #wrap{ height:auto; }
-    header{ position:sticky; top:0; background:var(--bg); z-index:40; padding-bottom:8px; }
-    #content-grid{
-      display:flex; flex-direction:column; gap:10px;
-      grid-template-columns:none; grid-template-rows:none;
-    }
-    .cg-cw, .cg-radar, .cg-5day, .cg-hourly, .cg-cal, .cg-solar, .cg-emp{
-      grid-column:auto; grid-row:auto;
-    }
-    .card{ padding:14px 16px; }
-    #radar-wrap{ min-height:220px; }
-    #solar-chart{ min-height:150px; }
-    #forecast{ grid-template-columns:repeat(5,1fr); }
-    #hourly{ grid-template-columns:repeat(6,1fr); row-gap:14px; }
-    #emp-grid{ grid-template-columns:1fr; gap:14px; }
-    footer{ padding-bottom:14px; }
-  }
-
   .card{
     background:var(--panel);
     border:1px solid var(--line);
@@ -269,6 +247,33 @@
   }
 
   svg{overflow:visible;}
+
+  /* ---- mobile: stack everything, allow vertical scroll ----
+     Placed last on purpose: several rules here override earlier
+     desktop-grid rules on the same selectors (#radar-wrap,
+     #solar-chart, #hourly, .card). CSS resolves equal-specificity
+     conflicts by source order, so this block must stay LAST or
+     those overrides silently lose to the desktop rules again. */
+  @media (max-width:900px), (max-aspect-ratio:4/5){
+    html, body{ height:auto; overflow:auto; }
+    body{ padding:14px; }
+    #wrap{ height:auto; }
+    header{ position:sticky; top:0; background:var(--bg); z-index:40; padding-bottom:8px; }
+    #content-grid{
+      display:flex; flex-direction:column; gap:10px;
+      grid-template-columns:none; grid-template-rows:none;
+    }
+    .cg-cw, .cg-radar, .cg-5day, .cg-hourly, .cg-cal, .cg-solar, .cg-emp{
+      grid-column:auto; grid-row:auto;
+    }
+    .card{ padding:14px 16px; }
+    #radar-wrap{ min-height:220px; }
+    #solar-chart{ min-height:150px; }
+    #forecast{ grid-template-columns:repeat(5,1fr); }
+    #hourly{ grid-template-columns:repeat(6,1fr); row-gap:14px; }
+    #emp-grid{ grid-template-columns:1fr; gap:14px; }
+    footer{ padding-bottom:14px; }
+  }
 </style>
 <link href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
@@ -288,7 +293,7 @@
         <path d="M12 2L22 21H2L12 2Z" fill="url(#logoGrad)"/>
         <path d="M12 9L16.5 17.5H7.5L12 9Z" fill="#0A0D14"/>
       </svg>
-      <h1>HOME <span style="font-size:12px; font-weight:600; color:var(--text-faint); font-family:ui-monospace,'SF Mono',Consolas,monospace; letter-spacing:.5px; vertical-align:middle; margin-left:2px;">v2.0.0</span></h1>
+      <h1>HOME <span style="font-size:12px; font-weight:600; color:var(--text-faint); font-family:ui-monospace,'SF Mono',Consolas,monospace; letter-spacing:.5px; vertical-align:middle; margin-left:2px;">v2.0.1</span></h1>
       <span style="font-size:10px; font-weight:700; letter-spacing:1.5px; color:var(--text-faint); border:1px solid var(--line); border-radius:5px; padding:4px 8px; text-transform:uppercase; margin-left:4px;">
         Live Weather · Simulated Rest
       </span>
