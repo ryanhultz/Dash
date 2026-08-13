@@ -321,7 +321,7 @@
         <path d="M12 2L22 21H2L12 2Z" fill="url(#logoGrad)"/>
         <path d="M12 9L16.5 17.5H7.5L12 9Z" fill="#0A0D14"/>
       </svg>
-      <h1>HOME <span style="font-size:12px; font-weight:600; color:var(--text-faint); font-family:ui-monospace,'SF Mono',Consolas,monospace; letter-spacing:.5px; vertical-align:middle; margin-left:2px;">v2.1.1</span></h1>
+      <h1>HOME <span style="font-size:12px; font-weight:600; color:var(--text-faint); font-family:ui-monospace,'SF Mono',Consolas,monospace; letter-spacing:.5px; vertical-align:middle; margin-left:2px;">v2.2.0</span></h1>
       <span style="font-size:10px; font-weight:700; letter-spacing:1.5px; color:var(--text-faint); border:1px solid var(--line); border-radius:5px; padding:4px 8px; text-transform:uppercase; margin-left:4px;">
         Live Weather · Simulated Rest
       </span>
@@ -722,71 +722,148 @@ function cloudFactorForCode(code){
   return 0.8;
 }
 
-// LIVE weather via Open-Meteo (no API key needed) — this is the one panel
-// that doesn't need a backend/CORS proxy, so it's wired up for real.
+// LIVE weather via the National Weather Service (api.weather.gov) — no
+// API key needed, and it's the authoritative US source (actual forecaster
+// output + real station observations) rather than a blended global model,
+// which is why it tracks local reality more closely than Open-Meteo did.
 let LAT = 42.9058, LON = -76.7594;
-const TIMEZONE = "America/New_York";
+
+// NWS doesn't return a WMO-style numeric condition code — map its icon
+// URL / short-forecast text onto the same code buckets wIcon()/weatherIconSVG()
+// already understand, so nothing downstream needs to change.
+function nwsToCode(iconUrl, text){
+  const s = ((iconUrl||"") + " " + (text||"")).toLowerCase();
+  if(s.includes("tsra") || s.includes("thunder")) return 95;
+  if(s.includes("snow") || s.includes("sleet") || s.includes("blizzard") || s.includes("ice")) return 73;
+  if(s.includes("fzra") || s.includes("freezing rain")) return 66;
+  if(s.includes("shower")) return 80;
+  if(s.includes("drizzle")) return 55;
+  if(s.includes("rain")) return 63;
+  if(s.includes("fog") || s.includes("haze") || s.includes("smoke")) return 45;
+  if(s.includes("skc") || s.includes(" clear") || s.includes("sunny")) return 0;
+  if(s.includes("few")) return 1;
+  if(s.includes("sct") || s.includes("partly")) return 2;
+  if(s.includes("bkn") || s.includes("mostly cloudy")) return 2;
+  if(s.includes("ovc") || s.includes("overcast") || s.includes("cloudy")) return 3;
+  return 3;
+}
+
+// Compact NOAA solar-position calculation for sunrise/sunset — NWS doesn't
+// provide these, so compute locally rather than depending on another API.
+function sunTimes(date, lat, lon){
+  const rad = Math.PI/180;
+  const dayOfYear = Math.floor((date - new Date(date.getFullYear(),0,0))/86400000);
+  const fy = 2*Math.PI/365*(dayOfYear-1);
+  const eqTime = 229.18*(0.000075+0.001868*Math.cos(fy)-0.032077*Math.sin(fy)-0.014615*Math.cos(2*fy)-0.040849*Math.sin(2*fy));
+  const decl = 0.006918-0.399912*Math.cos(fy)+0.070257*Math.sin(fy)-0.006758*Math.cos(2*fy)+0.000907*Math.sin(2*fy)-0.002697*Math.cos(3*fy)+0.00148*Math.sin(3*fy);
+  const haArg = Math.cos(90.833*rad)/(Math.cos(lat*rad)*Math.cos(decl)) - Math.tan(lat*rad)*Math.tan(decl);
+  const ha = Math.acos(Math.min(1,Math.max(-1,haArg)))/rad;
+  const toDate = mins => { const d = new Date(Date.UTC(date.getFullYear(),date.getMonth(),date.getDate())); d.setUTCMinutes(mins); return d; };
+  return { sunrise: toDate(720 - 4*(lon+ha) - eqTime), sunset: toDate(720 - 4*(lon-ha) - eqTime) };
+}
+
+let NWS_URLS = null;
+async function getNwsUrls(){
+  if(NWS_URLS) return NWS_URLS;
+  const res = await fetch(`https://api.weather.gov/points/${LAT},${LON}`, {headers:{Accept:"application/geo+json"}});
+  const data = await res.json();
+  NWS_URLS = {
+    forecast: data.properties.forecast,
+    forecastHourly: data.properties.forecastHourly,
+    stationsUrl: data.properties.observationStations
+  };
+  return NWS_URLS;
+}
+
+async function fetchCurrentConditions(stationsUrl){
+  const sres = await fetch(stationsUrl, {headers:{Accept:"application/geo+json"}});
+  const sdata = await sres.json();
+  const stationId = sdata.features[0].properties.stationIdentifier;
+  const ores = await fetch(`https://api.weather.gov/stations/${stationId}/observations/latest`, {headers:{Accept:"application/geo+json"}});
+  const odata = await ores.json();
+  return odata.properties; // temperature/windSpeed/barometricPressure/relativeHumidity/heatIndex/windChill are {value, unitCode}
+}
+
 async function loadWeather(){
   try{
-    const url = `https://api.open-meteo.com/v1/forecast?latitude=${LAT}&longitude=${LON}`+
-      `&current=temperature_2m,apparent_temperature,weather_code,wind_speed_10m,relative_humidity_2m,pressure_msl,is_day`+
-      `&hourly=temperature_2m,weather_code,precipitation_probability,is_day`+
-      `&daily=weather_code,temperature_2m_max,temperature_2m_min,apparent_temperature_max,apparent_temperature_min,precipitation_probability_max,sunrise,sunset`+
-      `&forecast_days=5&temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch&timezone=${encodeURIComponent(TIMEZONE)}`;
-    const res = await fetch(url); const data = await res.json();
-    const c = data.current;
-    window.SIM.weather = { tempF: c.temperature_2m, code: c.weather_code, cloudFactor: cloudFactorForCode(c.weather_code) };
+    const urls = await getNwsUrls();
+    const [cur, hres, dres] = await Promise.all([
+      fetchCurrentConditions(urls.stationsUrl),
+      fetch(urls.forecastHourly, {headers:{Accept:"application/geo+json"}}),
+      fetch(urls.forecast, {headers:{Accept:"application/geo+json"}})
+    ]);
+    const hourly = (await hres.json()).properties.periods;
+    const daily = (await dres.json()).properties.periods;
 
-    document.getElementById("wx-icon").innerHTML = weatherIconSVG(c.weather_code, c.is_day, "wicon-lg", c.wind_speed_10m);
-    document.getElementById("wx-temp").textContent = Math.round(c.temperature_2m)+"°F";
-    document.getElementById("wx-cond").textContent = wText(c.weather_code);
-    document.getElementById("wx-hum").textContent = c.relative_humidity_2m+"%";
-    document.getElementById("wx-wind").textContent = Math.round(c.wind_speed_10m)+" mph";
-    document.getElementById("wx-press").textContent = (c.pressure_msl*0.02953).toFixed(2)+" in";
-    document.getElementById("h-temp").textContent = Math.round(c.temperature_2m)+"°F";
+    const now = new Date();
+    const sun = sunTimes(now, LAT, LON);
+    const isDayNow = now >= sun.sunrise && now < sun.sunset ? 1 : 0;
 
-    // feels-like: label as Heat Index when hot, Wind Chill when cold, else just "Feels Like"
-    const feelsLabel = c.temperature_2m >= 80 ? "Heat Index" : (c.temperature_2m <= 50 ? "Wind Chill" : "Feels Like");
-    document.getElementById("wx-feels").innerHTML = `${feelsLabel} <b>${Math.round(c.apparent_temperature)}°</b>`;
+    // current conditions — real station observation, SI units, convert to US
+    const cToF = c => c*9/5+32;
+    const curTempF = cur.temperature?.value!=null ? cToF(cur.temperature.value) : hourly[0].temperature;
+    const curWindMph = cur.windSpeed?.value!=null ? cur.windSpeed.value/1.60934 : parseInt(hourly[0].windSpeed) || 0;
+    const curPressIn = cur.barometricPressure?.value!=null ? cur.barometricPressure.value/3386.39 : null;
+    const curHum = cur.relativeHumidity?.value!=null ? Math.round(cur.relativeHumidity.value) : null;
+    const curCode = nwsToCode(cur.icon, cur.textDescription);
+    const feelsC = cur.heatIndex?.value ?? cur.windChill?.value;
+    const feelsF = feelsC!=null ? cToF(feelsC) : curTempF;
+    const feelsLabel = cur.heatIndex?.value!=null ? "Heat Index" : (cur.windChill?.value!=null ? "Wind Chill" : "Feels Like");
 
-    const d = data.daily;
-    const fmt = iso => new Date(iso).toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"});
-    document.getElementById("wx-sunrise").textContent = fmt(d.sunrise[0]);
-    document.getElementById("wx-sunset").textContent = fmt(d.sunset[0]);
+    window.SIM.weather = { tempF: curTempF, code: curCode, cloudFactor: cloudFactorForCode(curCode) };
 
-    // hourly forecast — find the current hour in the response, take the next 12
-    const hourly = data.hourly;
-    const nowHourIso = c.time.slice(0,13); // Open-Meteo's own local time, matches hourly.time's timezone
-    let startIdx = hourly.time.findIndex(t => t.slice(0,13) === nowHourIso);
-    if(startIdx === -1) startIdx = 0;
+    document.getElementById("wx-icon").innerHTML = weatherIconSVG(curCode, isDayNow, "wicon-lg", curWindMph);
+    document.getElementById("wx-temp").textContent = Math.round(curTempF)+"°F";
+    document.getElementById("wx-cond").textContent = cur.textDescription || wText(curCode);
+    document.getElementById("wx-hum").textContent = (curHum!=null ? curHum : "--")+"%";
+    document.getElementById("wx-wind").textContent = Math.round(curWindMph)+" mph";
+    document.getElementById("wx-press").textContent = (curPressIn!=null ? curPressIn.toFixed(2) : "--")+" in";
+    document.getElementById("h-temp").textContent = Math.round(curTempF)+"°F";
+    document.getElementById("wx-feels").innerHTML = `${feelsLabel} <b>${Math.round(feelsF)}°</b>`;
+    document.getElementById("wx-sunrise").textContent = sun.sunrise.toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"});
+    document.getElementById("wx-sunset").textContent = sun.sunset.toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"});
+
+    // 12-hour forecast — NWS hourly periods already start at the current hour
     const hEl = document.getElementById("hourly"); hEl.innerHTML = "";
-    for(let i=startIdx; i<startIdx+12 && i<hourly.time.length; i++){
-      const hDate = new Date(hourly.time[i]);
-      const label = i===startIdx ? "NOW" : hDate.toLocaleTimeString("en-US",{hour:"numeric"}).replace(" ","");
-      const isDay = hourly.is_day[i];
-      hEl.innerHTML += `<div class="hcell${isDay ? "" : " night"}">
+    for(let i=0; i<12 && i<hourly.length; i++){
+      const p = hourly[i];
+      const hDate = new Date(p.startTime);
+      const label = i===0 ? "NOW" : hDate.toLocaleTimeString("en-US",{hour:"numeric"}).replace(" ","");
+      const code = nwsToCode(p.icon, p.shortForecast);
+      const pop = p.probabilityOfPrecipitation?.value ?? 0;
+      hEl.innerHTML += `<div class="hcell${p.isDaytime ? "" : " night"}">
         <div class="t">${label}</div>
-        <div class="ic">${weatherIconSVG(hourly.weather_code[i], isDay, "wicon-md")}</div>
-        <div class="cond">${wText(hourly.weather_code[i])}</div>
-        <div class="v">${Math.round(hourly.temperature_2m[i])}°</div>
-        <div class="pop"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2s6 7 6 11a6 6 0 1 1-12 0c0-4 6-11 6-11Z"/></svg>${hourly.precipitation_probability[i]}%</div>
+        <div class="ic">${weatherIconSVG(code, p.isDaytime?1:0, "wicon-md")}</div>
+        <div class="cond">${p.shortForecast}</div>
+        <div class="v">${Math.round(p.temperature)}°</div>
+        <div class="pop"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2s6 7 6 11a6 6 0 1 1-12 0c0-4 6-11 6-11Z"/></svg>${pop}%</div>
       </div>`;
     }
 
+    // 5-day forecast — NWS gives alternating day/night 12h periods; pair
+    // each daytime high with the following night's low
     const el = document.getElementById("forecast"); el.innerHTML="";
-    const dayCount = Math.min(5, d.time.length);
-    for(let i=0;i<dayCount;i++){
-      const date = new Date(d.time[i]+"T12:00:00");
-      const label = i===0 ? "TODAY" : date.toLocaleDateString("en-US",{weekday:"short"}).toUpperCase();
-      el.innerHTML += `<div class="fday">
-        <div class="d">${label}</div>
-        <div class="ic">${weatherIconSVG(d.weather_code[i], 1, "wicon-md")}</div>
-        <div class="cond">${wText(d.weather_code[i])}</div>
-        <div class="hi">${Math.round(d.temperature_2m_max[i])}°</div>
-        <div class="lo">${Math.round(d.temperature_2m_min[i])}°</div>
-        <div class="feels">Feels ${Math.round(d.apparent_temperature_max[i])}°</div>
-        <div class="pop"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2s6 7 6 11a6 6 0 1 1-12 0c0-4 6-11 6-11Z"/></svg>${d.precipitation_probability_max[i]}%</div>
-      </div>`;
+    let dayCount = 0;
+    for(let i=0; i<daily.length && dayCount<5; i++){
+      const p = daily[i];
+      if(!p.isDaytime && dayCount===0) continue; // skip a leading "Tonight" period, start from a day
+      if(p.isDaytime){
+        const night = daily[i+1] && !daily[i+1].isDaytime ? daily[i+1] : null;
+        const date = new Date(p.startTime);
+        const label = dayCount===0 ? "TODAY" : date.toLocaleDateString("en-US",{weekday:"short"}).toUpperCase();
+        const code = nwsToCode(p.icon, p.shortForecast);
+        const pop = p.probabilityOfPrecipitation?.value ?? (night?.probabilityOfPrecipitation?.value ?? 0);
+        el.innerHTML += `<div class="fday">
+          <div class="d">${label}</div>
+          <div class="ic">${weatherIconSVG(code, 1, "wicon-md")}</div>
+          <div class="cond">${p.shortForecast}</div>
+          <div class="hi">${Math.round(p.temperature)}°</div>
+          <div class="lo">${night ? Math.round(night.temperature)+"°" : "--"}</div>
+          <div class="feels"></div>
+          <div class="pop"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2s6 7 6 11a6 6 0 1 1-12 0c0-4 6-11 6-11Z"/></svg>${pop}%</div>
+        </div>`;
+        dayCount++;
+      }
     }
   }catch(e){
     document.getElementById("wx-cond").textContent = "Weather unavailable";
