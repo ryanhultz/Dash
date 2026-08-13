@@ -293,7 +293,7 @@
         <path d="M12 2L22 21H2L12 2Z" fill="url(#logoGrad)"/>
         <path d="M12 9L16.5 17.5H7.5L12 9Z" fill="#0A0D14"/>
       </svg>
-      <h1>HOME <span style="font-size:12px; font-weight:600; color:var(--text-faint); font-family:ui-monospace,'SF Mono',Consolas,monospace; letter-spacing:.5px; vertical-align:middle; margin-left:2px;">v2.0.1</span></h1>
+      <h1>HOME <span style="font-size:12px; font-weight:600; color:var(--text-faint); font-family:ui-monospace,'SF Mono',Consolas,monospace; letter-spacing:.5px; vertical-align:middle; margin-left:2px;">v2.0.2</span></h1>
       <span style="font-size:10px; font-weight:700; letter-spacing:1.5px; color:var(--text-faint); border:1px solid var(--line); border-radius:5px; padding:4px 8px; text-transform:uppercase; margin-left:4px;">
         Live Weather · Simulated Rest
       </span>
@@ -906,6 +906,15 @@ function initRadar(){
   }).addTo(radarMap);
   loadRadarFrames();
   setInterval(loadRadarFrames, 10*60*1000); // RainViewer refreshes data every ~10 min
+
+  // The grid/flex layout that sizes #radar-map isn't guaranteed to have
+  // settled the instant the map initializes (fonts, grid row heights, etc.
+  // resolve slightly after first paint). Leaflet caches whatever pixel size
+  // it sees at init — if that's wrong, tiles stay blank forever even once
+  // the container is properly sized. Force a few recomputes to catch up.
+  [50, 300, 1000].forEach(ms => setTimeout(()=> radarMap && radarMap.invalidateSize(), ms));
+  window.addEventListener("resize", ()=> radarMap && radarMap.invalidateSize());
+  window.addEventListener("load", ()=> radarMap && radarMap.invalidateSize());
 }
 async function loadRadarFrames(){
   try{
