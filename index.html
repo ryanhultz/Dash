@@ -248,6 +248,34 @@
 
   svg{overflow:visible;}
 
+  /* ---- Leaflet core rendering rules, inlined ----
+     If the external leaflet.min.css fails to load (CDN block, CSP,
+     a style-blocking extension that lets scripts/images through but
+     not stylesheets), tiles will fetch successfully over the network
+     but never become visible — Leaflet's positioning AND its
+     load/hide mechanism both come from this CSS. Duplicating the
+     critical subset here means rendering doesn't depend on that
+     external request succeeding at all. */
+  .leaflet-pane, .leaflet-tile, .leaflet-marker-icon, .leaflet-marker-shadow,
+  .leaflet-tile-container, .leaflet-pane > svg, .leaflet-pane > canvas,
+  .leaflet-zoom-box, .leaflet-image-layer, .leaflet-layer {
+    position:absolute; left:0; top:0;
+  }
+  .leaflet-container { overflow:hidden; }
+  .leaflet-tile { filter:inherit; visibility:hidden; }
+  .leaflet-tile-loaded { visibility:inherit; }
+  .leaflet-tile-pane { z-index:200; }
+  .leaflet-overlay-pane { z-index:400; }
+  .leaflet-marker-pane { z-index:600; }
+  .leaflet-map-pane canvas { z-index:100; }
+  .leaflet-map-pane svg { z-index:200; }
+  .leaflet-container .leaflet-tile-pane img, .leaflet-container .leaflet-tile {
+    max-width:none !important; max-height:none !important;
+  }
+  .leaflet-top, .leaflet-bottom { position:absolute; z-index:1000; pointer-events:none; }
+  .leaflet-top{top:0;} .leaflet-right{right:0;} .leaflet-bottom{bottom:0;} .leaflet-left{left:0;}
+  .leaflet-control { position:relative; z-index:800; pointer-events:auto; }
+
   /* ---- mobile: stack everything, allow vertical scroll ----
      Placed last on purpose: several rules here override earlier
      desktop-grid rules on the same selectors (#radar-wrap,
@@ -293,7 +321,7 @@
         <path d="M12 2L22 21H2L12 2Z" fill="url(#logoGrad)"/>
         <path d="M12 9L16.5 17.5H7.5L12 9Z" fill="#0A0D14"/>
       </svg>
-      <h1>HOME <span style="font-size:12px; font-weight:600; color:var(--text-faint); font-family:ui-monospace,'SF Mono',Consolas,monospace; letter-spacing:.5px; vertical-align:middle; margin-left:2px;">v2.0.2</span></h1>
+      <h1>HOME <span style="font-size:12px; font-weight:600; color:var(--text-faint); font-family:ui-monospace,'SF Mono',Consolas,monospace; letter-spacing:.5px; vertical-align:middle; margin-left:2px;">v2.1.0</span></h1>
       <span style="font-size:10px; font-weight:700; letter-spacing:1.5px; color:var(--text-faint); border:1px solid var(--line); border-radius:5px; padding:4px 8px; text-transform:uppercase; margin-left:4px;">
         Live Weather · Simulated Rest
       </span>
@@ -898,23 +926,50 @@ setInterval(updateEmporia, 5000);
 // ---- LIVE RADAR (RainViewer + Leaflet, dark CARTO basemap) ----
 let radarMap = null, radarLayers = [], radarFrameIdx = 0, radarTimer = null;
 function initRadar(){
-  if(typeof L === "undefined") { document.getElementById("radar-time").textContent = "Map library unavailable"; return; }
-  radarMap = L.map("radar-map", { zoomControl: true, attributionControl: true }).setView([LAT, LON], 7);
-  L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
-    attribution: '&copy; OpenStreetMap, &copy; CARTO',
-    maxZoom: 12, subdomains: "abcd"
-  }).addTo(radarMap);
-  loadRadarFrames();
-  setInterval(loadRadarFrames, 10*60*1000); // RainViewer refreshes data every ~10 min
+  try{
+    if(typeof L === "undefined") { document.getElementById("radar-time").textContent = "Leaflet failed to load (script blocked?)"; return; }
+    radarMap = L.map("radar-map", { zoomControl: true, attributionControl: true }).setView([LAT, LON], 7);
+    const baseLayer = L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
+      attribution: '&copy; OpenStreetMap, &copy; CARTO',
+      maxZoom: 12, subdomains: "abcd"
+    }).addTo(radarMap);
 
-  // The grid/flex layout that sizes #radar-map isn't guaranteed to have
-  // settled the instant the map initializes (fonts, grid row heights, etc.
-  // resolve slightly after first paint). Leaflet caches whatever pixel size
-  // it sees at init — if that's wrong, tiles stay blank forever even once
-  // the container is properly sized. Force a few recomputes to catch up.
-  [50, 300, 1000].forEach(ms => setTimeout(()=> radarMap && radarMap.invalidateSize(), ms));
-  window.addEventListener("resize", ()=> radarMap && radarMap.invalidateSize());
-  window.addEventListener("load", ()=> radarMap && radarMap.invalidateSize());
+    // Surface tile failures instead of leaving a silent blank box — this is
+    // the single biggest diagnostic gap when a map "shows nothing": the
+    // container can be sized correctly while every tile request 404s or gets
+    // blocked (ad blocker, DNS block, offline), and nothing else would tell you.
+    let baseTileOk = false, baseErrorShown = false;
+    baseLayer.on("tileload", ()=>{ baseTileOk = true; });
+    baseLayer.on("tileerror", ()=>{
+      if(!baseTileOk && !baseErrorShown){
+        baseErrorShown = true;
+        document.getElementById("radar-time").textContent = "Map tiles blocked — check ad blocker / network";
+      }
+    });
+
+    loadRadarFrames();
+    setInterval(loadRadarFrames, 10*60*1000); // RainViewer refreshes data every ~10 min
+
+    // The grid/flex layout that sizes #radar-map isn't guaranteed to have
+    // settled the instant the map initializes (fonts, grid row heights, etc.
+    // resolve slightly after first paint). Leaflet caches whatever pixel size
+    // it sees at init — if that's wrong, tiles stay blank forever even once
+    // the container is properly sized. Force a few recomputes to catch up.
+    [50, 300, 1000].forEach(ms => setTimeout(()=> radarMap && radarMap.invalidateSize(), ms));
+    setTimeout(()=>{
+      if(!radarMap) return;
+      const sz = radarMap.getSize();
+      console.log(`[radar] container size: ${sz.x}×${sz.y}px`);
+      if(sz.x < 10 || sz.y < 10){
+        document.getElementById("radar-live").textContent = `⚠ ${Math.round(sz.x)}×${Math.round(sz.y)}px`;
+      }
+    }, 1200);
+    window.addEventListener("resize", ()=> radarMap && radarMap.invalidateSize());
+    window.addEventListener("load", ()=> radarMap && radarMap.invalidateSize());
+  }catch(err){
+    document.getElementById("radar-time").textContent = "Radar init error: " + err.message;
+    console.error("initRadar failed:", err);
+  }
 }
 async function loadRadarFrames(){
   try{
