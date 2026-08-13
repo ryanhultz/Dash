@@ -137,7 +137,7 @@
 
   /* ---- radar ---- */
   #radar-wrap{ position:relative; border-radius:10px; overflow:hidden; border:1px solid var(--line); flex:1; min-height:0; }
-  #radar-map{ height:100%; width:100%; background:#0d1218; }
+  #radar-map{ position:absolute; inset:0; width:100%; height:100%; background:#0d1218; }
   #radar-time{
     position:absolute; bottom:8px; left:8px; z-index:500;
     background:rgba(10,13,20,.75); color:var(--text); font-size:9px; font-weight:600;
@@ -295,8 +295,8 @@
       grid-column:auto; grid-row:auto;
     }
     .card{ padding:14px 16px; }
-    #radar-wrap{ min-height:220px; }
-    #solar-chart{ min-height:150px; }
+    #radar-wrap{ height:220px; flex:0 0 auto; }
+    #solar-chart{ height:150px; flex:0 0 auto; }
     #forecast{ grid-template-columns:repeat(5,1fr); }
     #hourly{ grid-template-columns:repeat(6,1fr); row-gap:14px; }
     #emp-grid{ grid-template-columns:1fr; gap:14px; }
@@ -321,7 +321,7 @@
         <path d="M12 2L22 21H2L12 2Z" fill="url(#logoGrad)"/>
         <path d="M12 9L16.5 17.5H7.5L12 9Z" fill="#0A0D14"/>
       </svg>
-      <h1>HOME <span style="font-size:12px; font-weight:600; color:var(--text-faint); font-family:ui-monospace,'SF Mono',Consolas,monospace; letter-spacing:.5px; vertical-align:middle; margin-left:2px;">v2.1.0</span></h1>
+      <h1>HOME <span style="font-size:12px; font-weight:600; color:var(--text-faint); font-family:ui-monospace,'SF Mono',Consolas,monospace; letter-spacing:.5px; vertical-align:middle; margin-left:2px;">v2.1.1</span></h1>
       <span style="font-size:10px; font-weight:700; letter-spacing:1.5px; color:var(--text-faint); border:1px solid var(--line); border-radius:5px; padding:4px 8px; text-transform:uppercase; margin-left:4px;">
         Live Weather · Simulated Rest
       </span>
