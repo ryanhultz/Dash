@@ -329,7 +329,7 @@
         <path d="M12 2L22 21H2L12 2Z" fill="url(#logoGrad)"/>
         <path d="M12 9L16.5 17.5H7.5L12 9Z" fill="#0A0D14"/>
       </svg>
-      <h1>HOME <span style="font-size:12px; font-weight:600; color:var(--text-faint); font-family:ui-monospace,'SF Mono',Consolas,monospace; letter-spacing:.5px; vertical-align:middle; margin-left:2px;">v2.6.3</span></h1>
+      <h1>HOME <span style="font-size:12px; font-weight:600; color:var(--text-faint); font-family:ui-monospace,'SF Mono',Consolas,monospace; letter-spacing:.5px; vertical-align:middle; margin-left:2px;">v2.6.4</span></h1>
       <span style="font-size:10px; font-weight:700; letter-spacing:1.5px; color:var(--text-faint); border:1px solid var(--line); border-radius:5px; padding:4px 8px; text-transform:uppercase; margin-left:4px;">
         Live Weather · Simulated Rest
       </span>
@@ -895,30 +895,43 @@ async function loadWeather(){
       tlEl.innerHTML += `<span>${i===0?"Now":new Date(hourly[i].startTime).toLocaleTimeString("en-US",{hour:"numeric"}).replace(" ","")} · ${Math.round(trendTemps[i])}°</span>`;
     });
 
-    // 5-day forecast — NWS gives alternating day/night 12h periods; pair
-    // each daytime high with the following night's low
-    const el = document.getElementById("forecast"); el.innerHTML="";
-    let dayCount = 0;
-    for(let i=0; i<daily.length && dayCount<5; i++){
-      const p = daily[i];
-      if(!p.isDaytime && dayCount===0) continue; // skip a leading "Tonight" period, start from a day
+    // 5-day forecast — group every period by its actual calendar date rather
+    // than assuming strict day/night array alternation. A day period and its
+    // "Tonight" counterpart share the same calendar date (the night period
+    // starts that same evening, not after midnight), so grouping by date is
+    // robust to however NWS orders or structures the period array — no
+    // possibility of an index-based off-by-one skipping a day.
+    const dayMap = new Map();
+    for(const p of daily){
+      const d = new Date(p.startTime);
+      const key = d.toDateString();
+      if(!dayMap.has(key)) dayMap.set(key, { date:d, hi:null, lo:null, code:3, cond:"", pop:0 });
+      const entry = dayMap.get(key);
       if(p.isDaytime){
-        const night = daily[i+1] && !daily[i+1].isDaytime ? daily[i+1] : null;
-        const date = new Date(p.startTime);
-        const label = dayCount===0 ? "TODAY" : date.toLocaleDateString("en-US",{weekday:"short"}).toUpperCase();
-        const code = nwsToCode(p.icon, p.shortForecast);
-        const pop = p.probabilityOfPrecipitation?.value ?? (night?.probabilityOfPrecipitation?.value ?? 0);
-        el.innerHTML += `<div class="fday">
-          <div class="d">${label}</div>
-          <div class="ic">${weatherIconSVG(code, 1, "wicon-md")}</div>
-          <div class="cond">${p.shortForecast}</div>
-          <div class="hi">${Math.round(p.temperature)}°</div>
-          <div class="lo">${night ? Math.round(night.temperature)+"°" : "--"}</div>
-          <div class="pop"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2s6 7 6 11a6 6 0 1 1-12 0c0-4 6-11 6-11Z"/></svg>${pop}%</div>
-        </div>`;
-        dayCount++;
+        entry.hi = p.temperature;
+        entry.code = nwsToCode(p.icon, p.shortForecast);
+        entry.cond = p.shortForecast;
+        entry.pop = p.probabilityOfPrecipitation?.value ?? entry.pop;
+      } else {
+        entry.lo = p.temperature;
+        if(!entry.cond) { entry.cond = p.shortForecast; entry.code = nwsToCode(p.icon, p.shortForecast); }
+        if(!entry.pop) entry.pop = p.probabilityOfPrecipitation?.value ?? 0;
       }
     }
+    const todayKey = now.toDateString();
+    const days = Array.from(dayMap.values()).sort((a,b)=>a.date-b.date).slice(0,5);
+    const el = document.getElementById("forecast"); el.innerHTML="";
+    days.forEach(entry=>{
+      const label = entry.date.toDateString()===todayKey ? "TODAY" : entry.date.toLocaleDateString("en-US",{weekday:"short"}).toUpperCase();
+      el.innerHTML += `<div class="fday">
+        <div class="d">${label}</div>
+        <div class="ic">${weatherIconSVG(entry.code, 1, "wicon-md")}</div>
+        <div class="cond">${entry.cond}</div>
+        <div class="hi">${entry.hi!=null ? Math.round(entry.hi)+"°" : "--"}</div>
+        <div class="lo">${entry.lo!=null ? Math.round(entry.lo)+"°" : "--"}</div>
+        <div class="pop"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2s6 7 6 11a6 6 0 1 1-12 0c0-4 6-11 6-11Z"/></svg>${entry.pop}%</div>
+      </div>`;
+    });
   }catch(e){
     document.getElementById("wx-cond").textContent = "Weather unavailable";
     console.error(e);
