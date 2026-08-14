@@ -329,7 +329,7 @@
         <path d="M12 2L22 21H2L12 2Z" fill="url(#logoGrad)"/>
         <path d="M12 9L16.5 17.5H7.5L12 9Z" fill="#0A0D14"/>
       </svg>
-      <h1>HOME <span style="font-size:12px; font-weight:600; color:var(--text-faint); font-family:ui-monospace,'SF Mono',Consolas,monospace; letter-spacing:.5px; vertical-align:middle; margin-left:2px;">v2.7.0</span></h1>
+      <h1>HOME <span style="font-size:12px; font-weight:600; color:var(--text-faint); font-family:ui-monospace,'SF Mono',Consolas,monospace; letter-spacing:.5px; vertical-align:middle; margin-left:2px;">v2.7.1</span></h1>
       <span style="font-size:10px; font-weight:700; letter-spacing:1.5px; color:var(--text-faint); border:1px solid var(--line); border-radius:5px; padding:4px 8px; text-transform:uppercase; margin-left:4px;">
         Live Weather · Simulated Rest
       </span>
@@ -1031,7 +1031,12 @@ async function loadRealEmporiaData(){
     const res = await fetch("emporia-data.json?_=" + Date.now());
     if(!res.ok) return; // file may not exist yet on first deploy — fall back to simulated silently
     const data = await res.json();
-    const main = data.channels.find(c => c.name === "Main");
+    // "Main" (the combined 1,2,3 channel) has known bad data at DAY/MONTH
+    // scale via this API — confirmed via real polling data showing large
+    // negative kWh totals that don't match reality. "TotalUsage" is
+    // Emporia's own pre-computed whole-home aggregate and is reliable at
+    // every scale, so use that instead for the dashboard's Home Use stats.
+    const main = data.channels.find(c => c.name === "TotalUsage");
     if(main && main.usage_kwh_last_min != null){
       window.__realEmporia = {
         kw: main.usage_kwh_last_min * 60,
