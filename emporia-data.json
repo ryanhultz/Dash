@@ -1,11 +1,11 @@
 {
-  "updated_utc": "2026-08-14T23:28:50.100037Z",
+  "updated_utc": "2026-08-14T23:32:34.442322Z",
   "channels": [
     {
       "device_gid": 154036,
       "channel_num": "1,2,3",
       "name": "Main",
-      "usage_kwh_last_min": 0.01089805898362619
+      "usage_kwh_last_min": 0.01123938727222138
     },
     {
       "device_gid": 154036,
@@ -35,13 +35,13 @@
       "device_gid": 154036,
       "channel_num": "6",
       "name": "6",
-      "usage_kwh_last_min": 0.0003889076950373473
+      "usage_kwh_last_min": 0.0003839113741413528
     },
     {
       "device_gid": 154036,
       "channel_num": "7",
       "name": "7",
-      "usage_kwh_last_min": 0.0016722280370217782
+      "usage_kwh_last_min": 0.0016677330446914886
     },
     {
       "device_gid": 154036,
@@ -59,13 +59,13 @@
       "device_gid": 154036,
       "channel_num": "10",
       "name": "10",
-      "usage_kwh_last_min": 0.005695124792452212
+      "usage_kwh_last_min": 0.0056214630055315615
     },
     {
       "device_gid": 154036,
       "channel_num": "11",
       "name": "Master Bed Room Heat Pump",
-      "usage_kwh_last_min": 0.0019799220919432463
+      "usage_kwh_last_min": 0.0019772773724766398
     },
     {
       "device_gid": 154036,
@@ -77,13 +77,13 @@
       "device_gid": 154036,
       "channel_num": "13",
       "name": "Kitchen ",
-      "usage_kwh_last_min": 0.00223554986166071
+      "usage_kwh_last_min": 0.0022029023900278295
     },
     {
       "device_gid": 154036,
       "channel_num": "14",
       "name": "Barn",
-      "usage_kwh_last_min": -0.005581769163626211
+      "usage_kwh_last_min": -0.005070750355608586
     },
     {
       "device_gid": 154036,
@@ -101,13 +101,13 @@
       "device_gid": 154036,
       "channel_num": "TotalUsage",
       "name": "TotalUsage",
-      "usage_kwh_last_min": 0.0164798281472524
+      "usage_kwh_last_min": 0.016310137627829967
     },
     {
       "device_gid": 154036,
       "channel_num": "Balance",
       "name": "Balance",
-      "usage_kwh_last_min": 0.004508095669137107
+      "usage_kwh_last_min": 0.004456850440961094
     }
   ]
 }
