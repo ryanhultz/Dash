@@ -329,7 +329,7 @@
         <path d="M12 2L22 21H2L12 2Z" fill="url(#logoGrad)"/>
         <path d="M12 9L16.5 17.5H7.5L12 9Z" fill="#0A0D14"/>
       </svg>
-      <h1>HOME <span style="font-size:12px; font-weight:600; color:var(--text-faint); font-family:ui-monospace,'SF Mono',Consolas,monospace; letter-spacing:.5px; vertical-align:middle; margin-left:2px;">v2.6.4</span></h1>
+      <h1>HOME <span style="font-size:12px; font-weight:600; color:var(--text-faint); font-family:ui-monospace,'SF Mono',Consolas,monospace; letter-spacing:.5px; vertical-align:middle; margin-left:2px;">v2.7.0</span></h1>
       <span style="font-size:10px; font-weight:700; letter-spacing:1.5px; color:var(--text-faint); border:1px solid var(--line); border-radius:5px; padding:4px 8px; text-transform:uppercase; margin-left:4px;">
         Live Weather · Simulated Rest
       </span>
@@ -556,7 +556,7 @@
             Home Use
           </div>
           <div class="emp-fig"><span id="emp-home-kw">--</span><span class="unit">kW</span></div>
-          <div class="emp-sub"><span class="dot pulse" style="background:#4DD8E8; box-shadow:0 0 6px #4DD8E8;"></span>Live draw (simulated)</div>
+          <div class="emp-sub"><span class="dot pulse" style="background:#4DD8E8; box-shadow:0 0 6px #4DD8E8;"></span><span id="emp-home-live-note">Live draw (simulated)</span></div>
           <div class="emp-stats">
             <div><div class="l">Today</div><div class="v" id="emp-home-today">-- kWh</div></div>
             <div><div class="l">This Month</div><div class="v" id="emp-home-month">-- kWh</div></div>
@@ -1021,22 +1021,57 @@ function hvacLoadKw(tempF){
   if(tempF > 82) return (tempF-82)*0.11;   // AC load in hot weather
   return 0;
 }
+
+// REAL home-use data from the GitHub Actions Emporia poller — writes
+// emporia-data.json to the repo root every ~5 min. EV charger stays
+// simulated for now (none of the monitored channels are labeled for it yet).
+window.__realEmporia = null;
+async function loadRealEmporiaData(){
+  try{
+    const res = await fetch("emporia-data.json?_=" + Date.now());
+    if(!res.ok) return; // file may not exist yet on first deploy — fall back to simulated silently
+    const data = await res.json();
+    const main = data.channels.find(c => c.name === "Main");
+    if(main && main.usage_kwh_last_min != null){
+      window.__realEmporia = {
+        kw: main.usage_kwh_last_min * 60,
+        todayKwh: main.usage_kwh_today,
+        monthKwh: main.usage_kwh_month,
+        updated: data.updated_utc
+      };
+      if(typeof updateEmporia === "function") updateEmporia(); // don't wait up to 5s for the next tick
+    }
+  }catch(e){ console.error("Emporia data fetch failed:", e); }
+}
+loadRealEmporiaData();
+setInterval(loadRealEmporiaData, 60*1000);
 function updateEmporia(){
   const now = new Date();
   const hFloat = now.getHours() + now.getMinutes()/60;
   const hvac = hvacLoadKw(window.SIM.weather.tempF);
 
   // -- home use --
-  const homeKw = kwAtHourGeneric(HOME_HOURLY_KW, hFloat) * (0.9 + Math.random()*0.2) + hvac;
+  const real = window.__realEmporia;
+  let homeKw, homeKwh, homeKwhMonth;
+  if(real && real.kw != null){
+    homeKw = real.kw;
+    homeKwh = real.todayKwh;
+    homeKwhMonth = real.monthKwh;
+  } else {
+    homeKw = kwAtHourGeneric(HOME_HOURLY_KW, hFloat) * (0.9 + Math.random()*0.2) + hvac;
+    homeKwh = 0;
+    for(let h=0; h<hFloat; h+=0.25) homeKwh += kwAtHourGeneric(HOME_HOURLY_KW, h)*0.25 + hvac*0.25;
+    homeKwhMonth = homeKwh*27;
+  }
   document.getElementById("emp-home-kw").textContent = homeKw.toFixed(2);
-  let homeKwh = 0;
-  for(let h=0; h<hFloat; h+=0.25) homeKwh += kwAtHourGeneric(HOME_HOURLY_KW, h)*0.25 + hvac*0.25;
-  document.getElementById("emp-home-today").textContent = homeKwh.toFixed(1)+" kWh";
-  document.getElementById("emp-home-month").textContent = Math.round(homeKwh*27)+" kWh";
+  document.getElementById("emp-home-today").textContent = (homeKwh!=null ? homeKwh.toFixed(1) : "--")+" kWh";
+  document.getElementById("emp-home-month").textContent = (homeKwhMonth!=null ? Math.round(homeKwhMonth) : "--")+" kWh";
   const solarKw = kwAtHour(hFloat) * window.SIM.weather.cloudFactor;
   const net = solarKw - homeKw;
   document.getElementById("emp-home-net").textContent = (net>=0 ? "+" : "") + net.toFixed(1) + " kW";
-  document.getElementById("emp-home-cost").textContent = "$" + (homeKwh*window.SETTINGS.rateKwh).toFixed(2);
+  document.getElementById("emp-home-cost").textContent = "$" + ((homeKwh||0)*window.SETTINGS.rateKwh).toFixed(2);
+  const homeLiveNote = document.getElementById("emp-home-live-note");
+  if(homeLiveNote) homeLiveNote.textContent = real ? "Live draw" : "Live draw (simulated)";
 
   // -- EV charger: simulate an overnight charge window, ~11pm–5am --
   const charging = (hFloat >= 23 || hFloat < 5);
