@@ -329,7 +329,7 @@
         <path d="M12 2L22 21H2L12 2Z" fill="url(#logoGrad)"/>
         <path d="M12 9L16.5 17.5H7.5L12 9Z" fill="#0A0D14"/>
       </svg>
-      <h1>HOME <span style="font-size:12px; font-weight:600; color:var(--text-faint); font-family:ui-monospace,'SF Mono',Consolas,monospace; letter-spacing:.5px; vertical-align:middle; margin-left:2px;">v2.6.0</span></h1>
+      <h1>HOME <span style="font-size:12px; font-weight:600; color:var(--text-faint); font-family:ui-monospace,'SF Mono',Consolas,monospace; letter-spacing:.5px; vertical-align:middle; margin-left:2px;">v2.6.1</span></h1>
       <span style="font-size:10px; font-weight:700; letter-spacing:1.5px; color:var(--text-faint); border:1px solid var(--line); border-radius:5px; padding:4px 8px; text-transform:uppercase; margin-left:4px;">
         Live Weather · Simulated Rest
       </span>
@@ -1102,7 +1102,7 @@ function initRadar(){
 // no suffix for the current mosaic) in 5-minute steps. Building one tile
 // layer per offset and cycling their opacity is the same technique the
 // original RainViewer loop used, just pointed at a different tile source.
-const RADAR_OFFSETS = ["m50m","m45m","m40m","m35m","m30m","m25m","m20m","m15m","m10m","m05m",""];
+const RADAR_OFFSETS = Array.from({length:24}, (_,i) => `m${(120-i*5).toString().padStart(2,"0")}m`).concat([""]);
 function buildRadarLoop(){
   try{
     radarLayers.forEach(l => radarMap.removeLayer(l));
@@ -1124,7 +1124,7 @@ function buildRadarLoop(){
       radarLayers[radarFrameIdx].setOpacity(0);
       radarFrameIdx = (radarFrameIdx + 1) % radarLayers.length;
       showRadarFrame(radarFrameIdx);
-    }, 600);
+    }, 400); // 25 frames * 400ms = 10s loop (was 11 frames * 600ms = 6.6s)
   }catch(e){
     document.getElementById("radar-time").textContent = "Radar unavailable";
     console.error(e);
