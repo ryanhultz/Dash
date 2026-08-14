@@ -29,25 +29,45 @@ def main():
     devices = vue.get_devices()
     device_gids = [d.device_gid for d in devices]
 
-    # Instantaneous-ish usage in kWh over the last minute, per channel.
-    # NOTE: pyemvue's exact return shape can vary a bit by version — if this
-    # errors, print(usage_dict) to see the real structure and adjust the
-    # loop below. This is written against the commonly-documented shape.
-    usage_dict = vue.get_device_list_usage(
-        deviceGids=device_gids,
-        instant=None,
-        scale=Scale.MINUTE.value,
-        unit=Unit.KWH.value,
+    # Three scales in one run: instantaneous (for live kW), day-to-date, and
+    # month-to-date (for the dashboard's "Today"/"This Month" stats) — avoids
+    # needing to accumulate history ourselves between polls.
+    usage_minute = vue.get_device_list_usage(
+        deviceGids=device_gids, instant=None,
+        scale=Scale.MINUTE.value, unit=Unit.KWH.value,
+    )
+    usage_day = vue.get_device_list_usage(
+        deviceGids=device_gids, instant=None,
+        scale=Scale.DAY.value, unit=Unit.KWH.value,
+    )
+    usage_month = vue.get_device_list_usage(
+        deviceGids=device_gids, instant=None,
+        scale=Scale.MONTH.value, unit=Unit.KWH.value,
     )
 
+    def flatten(usage_dict):
+        # {(gid, channel_num): usage_kwh}
+        out = {}
+        for gid, device in usage_dict.items():
+            for channel_num, channel in device.channels.items():
+                out[(gid, channel_num)] = channel.usage
+        return out
+
+    minute_map = flatten(usage_minute)
+    day_map = flatten(usage_day)
+    month_map = flatten(usage_month)
+
     channels_out = []
-    for gid, device in usage_dict.items():
+    for gid, device in usage_minute.items():
         for channel_num, channel in device.channels.items():
+            key = (gid, channel_num)
             channels_out.append({
                 "device_gid": gid,
                 "channel_num": channel_num,
                 "name": getattr(channel, "name", None) or f"Channel {channel_num}",
-                "usage_kwh_last_min": channel.usage,
+                "usage_kwh_last_min": minute_map.get(key),
+                "usage_kwh_today": day_map.get(key),
+                "usage_kwh_month": month_map.get(key),
             })
 
     result = {
