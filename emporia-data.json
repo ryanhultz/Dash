@@ -1,0 +1,113 @@
+{
+  "updated_utc": "2026-08-14T23:21:57.866861Z",
+  "channels": [
+    {
+      "device_gid": 154036,
+      "channel_num": "1,2,3",
+      "name": "Main",
+      "usage_kwh_last_min": 0.009897688562100526
+    },
+    {
+      "device_gid": 154036,
+      "channel_num": "1",
+      "name": "Stove",
+      "usage_kwh_last_min": 0.0
+    },
+    {
+      "device_gid": 154036,
+      "channel_num": "2",
+      "name": "Dryer",
+      "usage_kwh_last_min": 0.0
+    },
+    {
+      "device_gid": 154036,
+      "channel_num": "3",
+      "name": "3",
+      "usage_kwh_last_min": 0.0
+    },
+    {
+      "device_gid": 154036,
+      "channel_num": "5",
+      "name": "Water Heater",
+      "usage_kwh_last_min": 0.0
+    },
+    {
+      "device_gid": 154036,
+      "channel_num": "6",
+      "name": "6",
+      "usage_kwh_last_min": 0.00038797377587121624
+    },
+    {
+      "device_gid": 154036,
+      "channel_num": "7",
+      "name": "7",
+      "usage_kwh_last_min": 0.001775431777530246
+    },
+    {
+      "device_gid": 154036,
+      "channel_num": "8",
+      "name": "Well Pump",
+      "usage_kwh_last_min": 0.0
+    },
+    {
+      "device_gid": 154036,
+      "channel_num": "9",
+      "name": "living Room Heat Pump",
+      "usage_kwh_last_min": 0.0
+    },
+    {
+      "device_gid": 154036,
+      "channel_num": "10",
+      "name": "10",
+      "usage_kwh_last_min": 0.005722139669065122
+    },
+    {
+      "device_gid": 154036,
+      "channel_num": "11",
+      "name": "Master Bed Room Heat Pump",
+      "usage_kwh_last_min": 0.002060389853664176
+    },
+    {
+      "device_gid": 154036,
+      "channel_num": "12",
+      "name": "12",
+      "usage_kwh_last_min": 0.0
+    },
+    {
+      "device_gid": 154036,
+      "channel_num": "13",
+      "name": "Kitchen ",
+      "usage_kwh_last_min": 0.0022511785326155406
+    },
+    {
+      "device_gid": 154036,
+      "channel_num": "14",
+      "name": "Barn",
+      "usage_kwh_last_min": -0.00682734906094667
+    },
+    {
+      "device_gid": 154036,
+      "channel_num": "15",
+      "name": "15",
+      "usage_kwh_last_min": 0.0
+    },
+    {
+      "device_gid": 154036,
+      "channel_num": "16",
+      "name": "Emma's Bed Room Heat Pump",
+      "usage_kwh_last_min": 0.0
+    },
+    {
+      "device_gid": 154036,
+      "channel_num": "TotalUsage",
+      "name": "TotalUsage",
+      "usage_kwh_last_min": 0.016725037623047195
+    },
+    {
+      "device_gid": 154036,
+      "channel_num": "Balance",
+      "name": "Balance",
+      "usage_kwh_last_min": 0.0045279240143008955
+    }
+  ]
+}
