@@ -329,7 +329,7 @@
         <path d="M12 2L22 21H2L12 2Z" fill="url(#logoGrad)"/>
         <path d="M12 9L16.5 17.5H7.5L12 9Z" fill="#0A0D14"/>
       </svg>
-      <h1>HOME <span style="font-size:12px; font-weight:600; color:var(--text-faint); font-family:ui-monospace,'SF Mono',Consolas,monospace; letter-spacing:.5px; vertical-align:middle; margin-left:2px;">v2.5.1</span></h1>
+      <h1>HOME <span style="font-size:12px; font-weight:600; color:var(--text-faint); font-family:ui-monospace,'SF Mono',Consolas,monospace; letter-spacing:.5px; vertical-align:middle; margin-left:2px;">v2.6.0</span></h1>
       <span style="font-size:10px; font-weight:700; letter-spacing:1.5px; color:var(--text-faint); border:1px solid var(--line); border-radius:5px; padding:4px 8px; text-transform:uppercase; margin-left:4px;">
         Live Weather · Simulated Rest
       </span>
@@ -1049,7 +1049,7 @@ setInterval(updateEmporia, 5000);
 // NEXRAD tile layer — same underlying NWS radar data, but served as plain
 // XYZ tiles (like the CARTO basemap already is) instead of a WMS endpoint
 // with layer IDs that are easy to get wrong and hard to verify blind.
-let radarMap = null, nexradLayer = null;
+let radarMap = null, radarLayers = [], radarFrameIdx = 0, radarCycleTimer = null;
 function initRadar(){
   try{
     if(typeof L === "undefined") { document.getElementById("radar-time").textContent = "Leaflet failed to load (script blocked?)"; return; }
@@ -1072,8 +1072,8 @@ function initRadar(){
       }
     });
 
-    loadRadar();
-    setInterval(loadRadar, 5*60*1000); // NEXRAD mosaic refreshes every few minutes
+    buildRadarLoop();
+    setInterval(buildRadarLoop, 5*60*1000); // rebuild so the offsets stay current as real time moves on
 
     // The grid/flex layout that sizes #radar-map isn't guaranteed to have
     // settled the instant the map initializes (fonts, grid row heights, etc.
@@ -1096,23 +1096,45 @@ function initRadar(){
     console.error("initRadar failed:", err);
   }
 }
-function loadRadar(){
+
+// Iowa Mesonet's tile cache supports relative-time suffixes on the NEXRAD
+// layer (documented pattern: nexrad-n0q-900913-mNNm for NN minutes ago, or
+// no suffix for the current mosaic) in 5-minute steps. Building one tile
+// layer per offset and cycling their opacity is the same technique the
+// original RainViewer loop used, just pointed at a different tile source.
+const RADAR_OFFSETS = ["m50m","m45m","m40m","m35m","m30m","m25m","m20m","m15m","m10m","m05m",""];
+function buildRadarLoop(){
   try{
-    if(nexradLayer) radarMap.removeLayer(nexradLayer);
-    // cache-bust so each refresh actually re-fetches rather than showing a stale tile
-    nexradLayer = L.tileLayer(`https://mesonet.agron.iastate.edu/cache/tile.py/1.0.0/nexrad-n0q-900913/{z}/{x}/{y}.png?_=${Date.now()}`, {
-      opacity: 0.75, zIndex: 10
+    radarLayers.forEach(l => radarMap.removeLayer(l));
+    radarLayers = RADAR_OFFSETS.map(off => {
+      const suffix = off ? `900913-${off}` : "900913";
+      return L.tileLayer(`https://mesonet.agron.iastate.edu/cache/tile.py/1.0.0/nexrad-n0q-${suffix}/{z}/{x}/{y}.png`, { opacity: 0, zIndex: 10 });
     });
-    nexradLayer.on("load", ()=>{
-      document.getElementById("radar-time").textContent =
-        "Now · " + new Date().toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"});
+    let firstLoaded = false;
+    radarLayers[radarLayers.length-1].on("tileerror", ()=>{
+      if(!firstLoaded) document.getElementById("radar-time").textContent = "Radar tiles unavailable";
     });
-    nexradLayer.on("tileerror", ()=>{ document.getElementById("radar-time").textContent = "Radar tiles unavailable"; });
-    nexradLayer.addTo(radarMap);
+    radarLayers[radarLayers.length-1].on("tileload", ()=>{ firstLoaded = true; });
+    radarLayers.forEach(l => l.addTo(radarMap));
+    radarFrameIdx = radarLayers.length - 1;
+    showRadarFrame(radarFrameIdx);
+
+    if(radarCycleTimer) clearInterval(radarCycleTimer);
+    radarCycleTimer = setInterval(()=>{
+      radarLayers[radarFrameIdx].setOpacity(0);
+      radarFrameIdx = (radarFrameIdx + 1) % radarLayers.length;
+      showRadarFrame(radarFrameIdx);
+    }, 600);
   }catch(e){
     document.getElementById("radar-time").textContent = "Radar unavailable";
     console.error(e);
   }
+}
+function showRadarFrame(i){
+  radarLayers[i].setOpacity(0.75);
+  const isLatest = i === radarLayers.length - 1;
+  const minutesAgo = (radarLayers.length - 1 - i) * 5;
+  document.getElementById("radar-time").textContent = isLatest ? "Now" : `${minutesAgo} min ago`;
 }
 if(document.readyState==="complete" || document.readyState==="interactive"){
   setTimeout(initRadar, 0);
