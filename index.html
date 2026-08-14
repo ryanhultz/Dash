@@ -329,7 +329,7 @@
         <path d="M12 2L22 21H2L12 2Z" fill="url(#logoGrad)"/>
         <path d="M12 9L16.5 17.5H7.5L12 9Z" fill="#0A0D14"/>
       </svg>
-      <h1>HOME <span style="font-size:12px; font-weight:600; color:var(--text-faint); font-family:ui-monospace,'SF Mono',Consolas,monospace; letter-spacing:.5px; vertical-align:middle; margin-left:2px;">v2.6.2</span></h1>
+      <h1>HOME <span style="font-size:12px; font-weight:600; color:var(--text-faint); font-family:ui-monospace,'SF Mono',Consolas,monospace; letter-spacing:.5px; vertical-align:middle; margin-left:2px;">v2.6.3</span></h1>
       <span style="font-size:10px; font-weight:700; letter-spacing:1.5px; color:var(--text-faint); border:1px solid var(--line); border-radius:5px; padding:4px 8px; text-transform:uppercase; margin-left:4px;">
         Live Weather · Simulated Rest
       </span>
@@ -859,9 +859,19 @@ async function loadWeather(){
       const label = i===0 ? "NOW" : hDate.toLocaleTimeString("en-US",{hour:"numeric"}).replace(" ","");
       const code = nwsToCode(p.icon, p.shortForecast);
       const pop = p.probabilityOfPrecipitation?.value ?? 0;
-      hEl.innerHTML += `<div class="hcell${p.isDaytime ? "" : " night"}">
+      // Use real sunrise/sunset (same values shown on the Current Weather
+      // card) rather than NWS's own isDaytime flag — that flag follows their
+      // forecast-period convention (a fixed ~6pm civil "evening" boundary),
+      // not actual solar sunset, so it disagreed with the sunset time
+      // displayed elsewhere on the page. Compute fresh per-hour (not reused
+      // from "now") and compare full timestamps, not just hour-of-day
+      // fragments — a bare hour comparison breaks near midnight since
+      // evening sunset, expressed in UTC, rolls into the next calendar date.
+      const hSun = sunTimes(hDate, LAT, LON);
+      const hIsDay = hDate >= hSun.sunrise && hDate < hSun.sunset;
+      hEl.innerHTML += `<div class="hcell${hIsDay ? "" : " night"}">
         <div class="t">${label}</div>
-        <div class="ic">${weatherIconSVG(code, p.isDaytime?1:0, "wicon-md")}</div>
+        <div class="ic">${weatherIconSVG(code, hIsDay?1:0, "wicon-md")}</div>
         <div class="cond">${p.shortForecast}</div>
         <div class="v">${Math.round(p.temperature)}°</div>
         <div class="pop"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2s6 7 6 11a6 6 0 1 1-12 0c0-4 6-11 6-11Z"/></svg>${pop}%</div>
