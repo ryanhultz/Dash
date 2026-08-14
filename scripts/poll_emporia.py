@@ -30,20 +30,30 @@ def main():
     device_gids = [d.device_gid for d in devices]
 
     # Three scales in one run: instantaneous (for live kW), day-to-date, and
-    # month-to-date (for the dashboard's "Today"/"This Month" stats) — avoids
-    # needing to accumulate history ourselves between polls.
-    usage_minute = vue.get_device_list_usage(
-        deviceGids=device_gids, instant=None,
-        scale=Scale.MINUTE.value, unit=Unit.KWH.value,
-    )
-    usage_day = vue.get_device_list_usage(
-        deviceGids=device_gids, instant=None,
-        scale=Scale.DAY.value, unit=Unit.KWH.value,
-    )
-    usage_month = vue.get_device_list_usage(
-        deviceGids=device_gids, instant=None,
-        scale=Scale.MONTH.value, unit=Unit.KWH.value,
-    )
+    # month-to-date (for the dashboard's "Today"/"This Month" stats). Each is
+    # wrapped separately — if DAY/MONTH aren't actually supported by this
+    # call (unclear from pyemvue's docs, which only explicitly documents the
+    # HOUR-or-finer restriction for a different function), this will print
+    # the real error instead of silently producing missing/null fields.
+    def get_usage(scale_val, label):
+        try:
+            result = vue.get_device_list_usage(
+                deviceGids=device_gids, instant=None,
+                scale=scale_val, unit=Unit.KWH.value,
+            )
+            print(f"{label} usage call succeeded")
+            return result
+        except Exception as e:
+            print(f"{label} usage call FAILED: {type(e).__name__}: {e}", file=sys.stderr)
+            return {}
+
+    usage_minute = get_usage(Scale.MINUTE.value, "MINUTE")
+    usage_day = get_usage(Scale.DAY.value, "DAY")
+    usage_month = get_usage(Scale.MONTH.value, "MONTH")
+
+    if not usage_minute:
+        print("MINUTE call failed — nothing to write, exiting", file=sys.stderr)
+        sys.exit(1)
 
     def flatten(usage_dict):
         # {(gid, channel_num): usage_kwh}
