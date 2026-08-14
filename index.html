@@ -56,7 +56,7 @@
     grid-template-rows:repeat(3,1fr);
     gap:8px;
   }
-  .cg-cw{ grid-column:1; grid-row:1; }
+  .cg-cw{ grid-column:1; grid-row:1; display:flex; flex-direction:column; }
   .cg-radar{ grid-column:2/4; grid-row:1; display:flex; flex-direction:column; }
   .cg-5day{ grid-column:4; grid-row:1; display:flex; flex-direction:column; }
   .cg-hourly{ grid-column:1/5; grid-row:2; display:flex; flex-direction:column; }
@@ -90,23 +90,28 @@
   .card-link svg{width:11px; height:11px;}
 
   /* ---- current weather ---- */
-  #wx-loc{font-size:11px; color:var(--text-dim); margin-bottom:6px;}
-  #wx-now{display:flex; align-items:center; gap:10px; margin-bottom:8px;}
-  #wx-icon{font-size:36px; line-height:1;}
-  #wx-icon svg{width:44px; height:44px;}
-  #wx-temp{font-size:28px; font-weight:800; line-height:1;}
-  #wx-cond{font-size:12px; color:var(--text-dim); margin-top:2px;}
-  #wx-stats{display:grid; grid-template-columns:repeat(4,1fr); gap:8px; border-top:1px solid var(--line); padding-top:8px;}
-  .wstat{display:flex; align-items:center; gap:6px;}
-  .wstat svg{width:13px; height:13px; color:var(--blue); flex-shrink:0;}
-  .wstat .v{font-size:11px; font-weight:700;}
-  .wstat .l{font-size:9px; color:var(--text-dim);}
-  .wstat.sun{display:flex; flex-direction:column; gap:2px;}
-  .wstat.sun .sunrow{display:flex; align-items:center; gap:5px;}
-  .wstat.sun svg{width:11px; height:11px;}
+  #wx-loc{font-size:13px; color:var(--text-dim); margin-bottom:12px;}
+  #wx-now{display:flex; align-items:stretch; gap:16px; margin-bottom:16px;}
+  #wx-icon{font-size:56px; line-height:1;}
+  #wx-icon svg{width:68px; height:68px;}
+  #wx-temp{font-size:42px; font-weight:800; line-height:1;}
+  #wx-cond{font-size:16px; color:var(--text-dim); margin-top:4px;}
+  #wx-stats{display:grid; grid-template-columns:repeat(4,1fr); gap:14px; border-top:1px solid var(--line); padding-top:16px; margin-top:auto;}
+  .wstat{display:flex; align-items:center; gap:8px;}
+  .wstat svg{width:17px; height:17px; color:var(--blue); flex-shrink:0;}
+  .wstat .v{font-size:14px; font-weight:700;}
+  .wstat .l{font-size:11px; color:var(--text-dim);}
+  .wstat.sun{display:flex; flex-direction:column; gap:4px;}
+  .wstat.sun .sunrow{display:flex; align-items:center; gap:7px;}
+  .wstat.sun svg{width:14px; height:14px;}
 
-  #wx-feels{font-size:10px; color:var(--text-dim); margin-top:3px;}
+  #wx-feels{font-size:13px; color:var(--text-dim); margin-top:5px;}
   #wx-feels b{color:var(--text); font-weight:600;}
+
+  #wx-trend-wrap{ flex:1; min-width:0; display:flex; flex-direction:column; justify-content:center; }
+  #wx-trend-label{ font-size:9px; font-weight:700; letter-spacing:1px; color:var(--text-faint); text-transform:uppercase; margin-bottom:4px; }
+  #wx-trend{ width:100%; height:44px; flex:0 0 auto; }
+  #wx-trend-labels{ display:flex; justify-content:space-between; font-size:9px; color:var(--text-faint); margin-top:3px; }
 
   /* ---- animated weather icons ---- */
   @keyframes wa-spin{ to{ transform:rotate(360deg); } }
@@ -155,14 +160,17 @@
   .leaflet-control-zoom a{ background:var(--panel-alt) !important; color:var(--text) !important; border-color:var(--line) !important; width:22px !important; height:22px !important; line-height:22px !important; }
 
   /* ---- forecast ---- */
-  #forecast{display:grid; grid-template-columns:repeat(5,1fr); gap:4px; flex:1; min-height:0; align-content:center;}
-  .fday{text-align:center; padding:2px;}
+  #forecast{
+    display:grid; grid-template-columns:repeat(5,1fr); grid-auto-flow:column;
+    grid-template-rows:auto auto auto auto auto auto;
+    gap:2px 4px; flex:1; min-height:0; align-content:center; text-align:center;
+  }
+  .fday{ display:contents; }
   .fday .d{font-size:10px; font-weight:700; letter-spacing:.3px; color:var(--text-dim); margin-bottom:4px;}
   .fday .ic{font-size:18px; margin-bottom:3px;}
   .fday .cond{font-size:8px; color:var(--text-faint); margin-bottom:3px; min-height:9px;}
   .fday .hi{font-size:13px; font-weight:700;}
   .fday .lo{font-size:10px; color:var(--text-dim); margin-top:1px;}
-  .fday .feels{font-size:8px; color:var(--text-faint); margin-top:2px;}
   .fday .pop{display:flex; align-items:center; justify-content:center; gap:2px; font-size:8px; color:var(--blue); margin-top:3px;}
   .fday .pop svg{width:8px; height:8px;}
 
@@ -321,7 +329,7 @@
         <path d="M12 2L22 21H2L12 2Z" fill="url(#logoGrad)"/>
         <path d="M12 9L16.5 17.5H7.5L12 9Z" fill="#0A0D14"/>
       </svg>
-      <h1>HOME <span style="font-size:12px; font-weight:600; color:var(--text-faint); font-family:ui-monospace,'SF Mono',Consolas,monospace; letter-spacing:.5px; vertical-align:middle; margin-left:2px;">v2.2.0</span></h1>
+      <h1>HOME <span style="font-size:12px; font-weight:600; color:var(--text-faint); font-family:ui-monospace,'SF Mono',Consolas,monospace; letter-spacing:.5px; vertical-align:middle; margin-left:2px;">v2.4.2</span></h1>
       <span style="font-size:10px; font-weight:700; letter-spacing:1.5px; color:var(--text-faint); border:1px solid var(--line); border-radius:5px; padding:4px 8px; text-transform:uppercase; margin-left:4px;">
         Live Weather · Simulated Rest
       </span>
@@ -377,6 +385,20 @@
           <div id="wx-temp">--°</div>
           <div id="wx-cond">Loading forecast…</div>
           <div id="wx-feels">Feels like <b>--°</b></div>
+        </div>
+        <div id="wx-trend-wrap">
+          <div id="wx-trend-label">NEXT 12H</div>
+          <svg id="wx-trend" viewBox="0 0 300 60" preserveAspectRatio="none">
+            <defs>
+              <linearGradient id="wxTrendFill" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#F5C042" stop-opacity="0.3"/>
+                <stop offset="100%" stop-color="#F5C042" stop-opacity="0"/>
+              </linearGradient>
+            </defs>
+            <path id="wx-trend-area" fill="url(#wxTrendFill)" stroke="none" d=""/>
+            <path id="wx-trend-line" fill="none" stroke="var(--yellow)" stroke-width="2" d=""/>
+          </svg>
+          <div id="wx-trend-labels"></div>
         </div>
       </div>
       <div id="wx-stats">
@@ -731,6 +753,11 @@ let LAT = 42.9058, LON = -76.7594;
 // NWS doesn't return a WMO-style numeric condition code — map its icon
 // URL / short-forecast text onto the same code buckets wIcon()/weatherIconSVG()
 // already understand, so nothing downstream needs to change.
+function degToCompass(deg){
+  if(deg==null || isNaN(deg)) return "";
+  const dirs = ["N","NNE","NE","ENE","E","ESE","SE","SSE","S","SSW","SW","WSW","W","WNW","NW","NNW"];
+  return dirs[Math.round(deg/22.5) % 16];
+}
 function nwsToCode(iconUrl, text){
   const s = ((iconUrl||"") + " " + (text||"")).toLowerCase();
   if(s.includes("tsra") || s.includes("thunder")) return 95;
@@ -816,7 +843,8 @@ async function loadWeather(){
     document.getElementById("wx-temp").textContent = Math.round(curTempF)+"°F";
     document.getElementById("wx-cond").textContent = cur.textDescription || wText(curCode);
     document.getElementById("wx-hum").textContent = (curHum!=null ? curHum : "--")+"%";
-    document.getElementById("wx-wind").textContent = Math.round(curWindMph)+" mph";
+    const curWindDir = degToCompass(cur.windDirection?.value);
+    document.getElementById("wx-wind").textContent = Math.round(curWindMph)+" mph"+(curWindDir?" "+curWindDir:"");
     document.getElementById("wx-press").textContent = (curPressIn!=null ? curPressIn.toFixed(2) : "--")+" in";
     document.getElementById("h-temp").textContent = Math.round(curTempF)+"°F";
     document.getElementById("wx-feels").innerHTML = `${feelsLabel} <b>${Math.round(feelsF)}°</b>`;
@@ -840,6 +868,23 @@ async function loadWeather(){
       </div>`;
     }
 
+    // temperature trend sparkline — same 12-hour window as the forecast strip
+    const trendTemps = hourly.slice(0,12).map(p => p.temperature);
+    const tMin = Math.min(...trendTemps), tMax = Math.max(...trendTemps);
+    const tRange = Math.max(tMax - tMin, 1); // avoid divide-by-zero on a flat trend
+    const tw = 300, th = 60, tpad = 4;
+    const txy = trendTemps.map((t,i) => [
+      (i/(trendTemps.length-1))*tw,
+      th - tpad - ((t-tMin)/tRange)*(th-tpad*2)
+    ]);
+    const tLine = txy.map((p,i) => (i===0?"M":"L")+p[0].toFixed(1)+","+p[1].toFixed(1)).join(" ");
+    document.getElementById("wx-trend-line").setAttribute("d", tLine);
+    document.getElementById("wx-trend-area").setAttribute("d", tLine+` L${tw},${th} L0,${th} Z`);
+    const tlEl = document.getElementById("wx-trend-labels"); tlEl.innerHTML = "";
+    [0, Math.floor(trendTemps.length/2), trendTemps.length-1].forEach(i=>{
+      tlEl.innerHTML += `<span>${i===0?"Now":new Date(hourly[i].startTime).toLocaleTimeString("en-US",{hour:"numeric"}).replace(" ","")} · ${Math.round(trendTemps[i])}°</span>`;
+    });
+
     // 5-day forecast — NWS gives alternating day/night 12h periods; pair
     // each daytime high with the following night's low
     const el = document.getElementById("forecast"); el.innerHTML="";
@@ -859,7 +904,6 @@ async function loadWeather(){
           <div class="cond">${p.shortForecast}</div>
           <div class="hi">${Math.round(p.temperature)}°</div>
           <div class="lo">${night ? Math.round(night.temperature)+"°" : "--"}</div>
-          <div class="feels"></div>
           <div class="pop"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2s6 7 6 11a6 6 0 1 1-12 0c0-4 6-11 6-11Z"/></svg>${pop}%</div>
         </div>`;
         dayCount++;
