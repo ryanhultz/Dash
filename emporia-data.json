@@ -1,13 +1,13 @@
 {
-  "updated_utc": "2026-08-15T09:52:28.719937Z",
+  "updated_utc": "2026-08-15T10:06:41.959443Z",
   "channels": [
     {
       "device_gid": 154036,
       "channel_num": "1,2,3",
       "name": "Main",
-      "usage_kwh_last_min": 0.009256977351294623,
-      "usage_kwh_today": 17.273758349229105,
-      "usage_kwh_month": -469.7243327360108
+      "usage_kwh_last_min": 0.004722123017628988,
+      "usage_kwh_today": 17.399332520333537,
+      "usage_kwh_month": -469.5987585649064
     },
     {
       "device_gid": 154036,
@@ -45,17 +45,17 @@
       "device_gid": 154036,
       "channel_num": "6",
       "name": "6",
-      "usage_kwh_last_min": 0.0001896416534097106,
-      "usage_kwh_today": 0.08394872598127381,
-      "usage_kwh_month": 13.52884109769317
+      "usage_kwh_last_min": 0.000188736566596561,
+      "usage_kwh_today": 0.08680474421510288,
+      "usage_kwh_month": 13.531697115927
     },
     {
       "device_gid": 154036,
       "channel_num": "7",
       "name": "7",
-      "usage_kwh_last_min": 0.0005008652878602346,
-      "usage_kwh_today": 0.2006226159914025,
-      "usage_kwh_month": 14.70931607974608
+      "usage_kwh_last_min": 0.000564594130092197,
+      "usage_kwh_today": 0.20849171115156892,
+      "usage_kwh_month": 14.717185174906247
     },
     {
       "device_gid": 154036,
@@ -77,33 +77,33 @@
       "device_gid": 154036,
       "channel_num": "10",
       "name": "10",
-      "usage_kwh_last_min": 0.005479632076263428,
-      "usage_kwh_today": 1.8494760899427873,
-      "usage_kwh_month": 104.56212230460068
+      "usage_kwh_last_min": 0.0006196265184967607,
+      "usage_kwh_today": 1.9161644427300168,
+      "usage_kwh_month": 104.6288106573879
     },
     {
       "device_gid": 154036,
       "channel_num": "11",
       "name": "Master Bed Room Heat Pump",
-      "usage_kwh_last_min": 0.00036023930709450336,
-      "usage_kwh_today": 0.2859050167833902,
-      "usage_kwh_month": 49.843242381688576
+      "usage_kwh_last_min": 0.00036714454910490246,
+      "usage_kwh_today": 0.2913869475394293,
+      "usage_kwh_month": 49.84872431244462
     },
     {
       "device_gid": 154036,
       "channel_num": "12",
       "name": "12",
-      "usage_kwh_last_min": 0.0,
-      "usage_kwh_today": 0.0,
-      "usage_kwh_month": 3.8138985424130603
+      "usage_kwh_last_min": 0.0002802512858355487,
+      "usage_kwh_today": 0.0012890441825654769,
+      "usage_kwh_month": 3.8151875865956257
     },
     {
       "device_gid": 154036,
       "channel_num": "13",
       "name": "Kitchen ",
-      "usage_kwh_last_min": 0.0010308697204943055,
-      "usage_kwh_today": 0.30312840648898287,
-      "usage_kwh_month": 29.62420178026527
+      "usage_kwh_last_min": 0.001087305465274387,
+      "usage_kwh_today": 0.31924848598303535,
+      "usage_kwh_month": 29.64032185975932
     },
     {
       "device_gid": 154036,
@@ -125,25 +125,25 @@
       "device_gid": 154036,
       "channel_num": "16",
       "name": "Emma's Bed Room Heat Pump",
-      "usage_kwh_last_min": 0.0004610320345825619,
-      "usage_kwh_today": 0.16000920548060255,
-      "usage_kwh_month": 14.738227877163254
+      "usage_kwh_last_min": 0.0004611373124652438,
+      "usage_kwh_today": 0.16701584427454785,
+      "usage_kwh_month": 14.7452345159572
     },
     {
       "device_gid": 154036,
       "channel_num": "TotalUsage",
       "name": "TotalUsage",
-      "usage_kwh_last_min": 0.009256977351294623,
-      "usage_kwh_today": 17.273758349229105,
-      "usage_kwh_month": 428.65554856068405
+      "usage_kwh_last_min": 0.004722123017628988,
+      "usage_kwh_today": 17.399332520333537,
+      "usage_kwh_month": 428.78112273178846
     },
     {
       "device_gid": 154036,
       "channel_num": "Balance",
       "name": "Balance",
-      "usage_kwh_last_min": 0.0012346972715898783,
-      "usage_kwh_today": 0.6449734747779203,
-      "usage_kwh_month": 76.93937559104748
+      "usage_kwh_last_min": 0.0011533271897633873,
+      "usage_kwh_today": 0.6632364864745215,
+      "usage_kwh_month": 76.95763860274403
     }
   ],
   "charger": {
