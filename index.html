@@ -329,7 +329,7 @@
         <path d="M12 2L22 21H2L12 2Z" fill="url(#logoGrad)"/>
         <path d="M12 9L16.5 17.5H7.5L12 9Z" fill="#0A0D14"/>
       </svg>
-      <h1>HOME <span style="font-size:12px; font-weight:600; color:var(--text-faint); font-family:ui-monospace,'SF Mono',Consolas,monospace; letter-spacing:.5px; vertical-align:middle; margin-left:2px;">v2.7.1</span></h1>
+      <h1>HOME <span style="font-size:12px; font-weight:600; color:var(--text-faint); font-family:ui-monospace,'SF Mono',Consolas,monospace; letter-spacing:.5px; vertical-align:middle; margin-left:2px;">v2.8.0</span></h1>
       <span style="font-size:10px; font-weight:700; letter-spacing:1.5px; color:var(--text-faint); border:1px solid var(--line); border-radius:5px; padding:4px 8px; text-transform:uppercase; margin-left:4px;">
         Live Weather · Simulated Rest
       </span>
@@ -583,7 +583,7 @@
           </div>
         </div>
       </div>
-      <div class="sim-note" style="margin-top:6px;">SIMULATED — swap in real Emporia Vue + EV charger telemetry via the Emporia API when ready.</div>
+      <div class="sim-note" style="margin-top:6px;">Home Use + Truck Charger: live via Emporia Vue when data is available, simulated otherwise. Session/range/SOC estimates are always approximate.</div>
     </div>
   </div>
 
@@ -1023,8 +1023,10 @@ function hvacLoadKw(tempF){
 }
 
 // REAL home-use data from the GitHub Actions Emporia poller — writes
-// emporia-data.json to the repo root every ~5 min. EV charger stays
-// simulated for now (none of the monitored channels are labeled for it yet).
+// emporia-data.json to the repo root every ~5 min. EV charger tracks the
+// "Truck Charger" channel once it's actually charging something — kW and
+// charging status are real; session/range/SOC stay simulated since there's
+// no session-start tracking available from a simple periodic poll.
 window.__realEmporia = null;
 async function loadRealEmporiaData(){
   try{
@@ -1037,15 +1039,23 @@ async function loadRealEmporiaData(){
     // Emporia's own pre-computed whole-home aggregate and is reliable at
     // every scale, so use that instead for the dashboard's Home Use stats.
     const main = data.channels.find(c => c.name === "TotalUsage");
+    const truck = data.channels.find(c => c.name === "Truck Charger");
+    let changed = false;
     if(main && main.usage_kwh_last_min != null){
-      window.__realEmporia = {
-        kw: main.usage_kwh_last_min * 60,
-        todayKwh: main.usage_kwh_today,
-        monthKwh: main.usage_kwh_month,
-        updated: data.updated_utc
-      };
-      if(typeof updateEmporia === "function") updateEmporia(); // don't wait up to 5s for the next tick
+      window.__realEmporia = window.__realEmporia || {};
+      window.__realEmporia.kw = main.usage_kwh_last_min * 60;
+      window.__realEmporia.todayKwh = main.usage_kwh_today;
+      window.__realEmporia.monthKwh = main.usage_kwh_month;
+      window.__realEmporia.updated = data.updated_utc;
+      changed = true;
     }
+    if(truck && truck.usage_kwh_last_min != null){
+      window.__realEmporia = window.__realEmporia || {};
+      window.__realEmporia.truckKw = truck.usage_kwh_last_min * 60;
+      window.__realEmporia.truckTodayKwh = truck.usage_kwh_today;
+      changed = true;
+    }
+    if(changed && typeof updateEmporia === "function") updateEmporia(); // don't wait up to 5s for the next tick
   }catch(e){ console.error("Emporia data fetch failed:", e); }
 }
 loadRealEmporiaData();
@@ -1078,28 +1088,32 @@ function updateEmporia(){
   const homeLiveNote = document.getElementById("emp-home-live-note");
   if(homeLiveNote) homeLiveNote.textContent = real ? "Live draw" : "Live draw (simulated)";
 
-  // -- EV charger: simulate an overnight charge window, ~11pm–5am --
-  const charging = (hFloat >= 23 || hFloat < 5);
+  // -- EV charger: real kW + charging status from the "Truck Charger"
+  // channel when available; session/range/SOC stay simulated since there's
+  // no session-start time to derive those from a periodic poll --
+  const realTruck = real && real.truckKw != null;
+  const truckKw = realTruck ? real.truckKw : null;
+  const charging = realTruck ? (truckKw > 0.3) : (hFloat >= 23 || hFloat < 5);
   const badge = document.getElementById("emp-ev-badge");
   const sub = document.getElementById("emp-ev-sub");
   if(charging){
-    const rateKw = 11.5;
-    document.getElementById("emp-ev-kw").textContent = (rateKw*(0.95+Math.random()*0.1)).toFixed(1);
+    const rateKw = realTruck ? truckKw : 11.5 * (0.95+Math.random()*0.1);
+    document.getElementById("emp-ev-kw").textContent = rateKw.toFixed(1);
     badge.textContent = "Charging"; badge.className = "badge charging";
-    sub.textContent = "Plugged in — home Level 2 charger";
+    sub.textContent = realTruck ? "Truck Charger — live" : "Plugged in — home Level 2 charger";
     const hoursIn = hFloat >= 23 ? hFloat-23 : hFloat+1;
-    const sessionKwh = Math.min(hoursIn*rateKw, 60);
-    document.getElementById("emp-ev-session").textContent = sessionKwh.toFixed(1)+" kWh";
+    const sessionKwh = realTruck ? (real.truckTodayKwh ?? 0) : Math.min(hoursIn*11.5, 60);
+    document.getElementById("emp-ev-session").textContent = sessionKwh.toFixed(1)+" kWh"+(realTruck?" (today)":"");
     document.getElementById("emp-ev-range").textContent = Math.round(sessionKwh*2.7)+" mi";
-    document.getElementById("emp-ev-soc").textContent = Math.min(30+Math.round(sessionKwh*1.1), 100)+"%";
+    document.getElementById("emp-ev-soc").textContent = Math.min(30+Math.round(sessionKwh*1.1), 100)+"%"+(realTruck?"*":"");
     document.getElementById("emp-ev-rate").textContent = "Level 2 · 48 A";
   } else {
-    document.getElementById("emp-ev-kw").textContent = "0.0";
+    document.getElementById("emp-ev-kw").textContent = realTruck ? truckKw.toFixed(1) : "0.0";
     badge.textContent = "Idle"; badge.className = "badge idle";
-    sub.textContent = "Not connected to charger";
-    document.getElementById("emp-ev-session").textContent = "0.0 kWh";
-    document.getElementById("emp-ev-range").textContent = "0 mi";
-    document.getElementById("emp-ev-soc").textContent = "82%";
+    sub.textContent = realTruck ? "Truck Charger — live" : "Not connected to charger";
+    document.getElementById("emp-ev-session").textContent = realTruck ? (real.truckTodayKwh ?? 0).toFixed(1)+" kWh (today)" : "0.0 kWh";
+    document.getElementById("emp-ev-range").textContent = realTruck ? Math.round((real.truckTodayKwh ?? 0)*2.7)+" mi" : "0 mi";
+    document.getElementById("emp-ev-soc").textContent = realTruck ? "--%" : "82%";
     document.getElementById("emp-ev-rate").textContent = "Level 2 · —";
   }
 }
