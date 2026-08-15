@@ -55,6 +55,29 @@ def main():
         print("MINUTE call failed — nothing to write, exiting", file=sys.stderr)
         sys.exit(1)
 
+    # The EV charger is a separate physical device (Emporia's smart charger
+    # hardware), not a CT-monitored circuit — it doesn't show up in the
+    # channel usage calls above at all, no matter what it's named. It needs
+    # its own API call. Docs note this can be slow (may "wake" the vehicle)
+    # and can time out around 10s, so it's wrapped and never blocks the rest
+    # of the poll from succeeding.
+    charger_out = None
+    try:
+        chargers = vue.get_chargers()
+        print(f"get_chargers() returned {len(chargers)} charger(s)")
+        if chargers:
+            c = chargers[0]
+            charger_out = {
+                "device_gid": getattr(c, "device_gid", None),
+                "charger_on": getattr(c, "charger_on", None),
+                "charging_rate_amps": getattr(c, "charging_rate", None),
+                "max_charging_rate_amps": getattr(c, "max_charging_rate", None),
+                "status": getattr(c, "status", None),
+                "message": getattr(c, "message", None),
+            }
+    except Exception as e:
+        print(f"get_chargers() FAILED: {type(e).__name__}: {e}", file=sys.stderr)
+
     def flatten(usage_dict):
         # {(gid, channel_num): usage_kwh}
         out = {}
@@ -83,6 +106,7 @@ def main():
     result = {
         "updated_utc": datetime.datetime.utcnow().isoformat() + "Z",
         "channels": channels_out,
+        "charger": charger_out,
     }
 
     with open("emporia-data.json", "w") as f:
