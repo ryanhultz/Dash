@@ -53,7 +53,7 @@
     flex:1; min-height:0;
     display:grid;
     grid-template-columns:repeat(4,1fr);
-    grid-template-rows:repeat(3,1fr);
+    grid-template-rows:repeat(4,1fr);
     gap:8px;
   }
   .cg-cw{ grid-column:1; grid-row:1; display:flex; flex-direction:column; }
@@ -63,6 +63,7 @@
   .cg-cal{ grid-column:1; grid-row:3; display:flex; flex-direction:column; }
   .cg-solar{ grid-column:2/4; grid-row:3; display:flex; flex-direction:column; }
   .cg-emp{ grid-column:4; grid-row:3; display:flex; flex-direction:column; }
+  .cg-radar2{ grid-column:1/5; grid-row:4; display:flex; flex-direction:column; }
 
   .card{
     background:var(--panel);
@@ -141,15 +142,15 @@
   .wicon-md{ width:25px; height:25px; }
 
   /* ---- radar ---- */
-  #radar-wrap{ position:relative; border-radius:10px; overflow:hidden; border:1px solid var(--line); flex:1; min-height:0; }
-  #radar-map{ position:absolute; inset:0; width:100%; height:100%; background:#0d1218; }
-  #radar-time{
+  #radar-wrap, #radar-wrap-2{ position:relative; border-radius:10px; overflow:hidden; border:1px solid var(--line); flex:1; min-height:0; }
+  #radar-map, #radar-map-2{ position:absolute; inset:0; width:100%; height:100%; background:#0d1218; }
+  #radar-time, #radar-time-2{
     position:absolute; bottom:8px; left:8px; z-index:500;
     background:rgba(10,13,20,.75); color:var(--text); font-size:9px; font-weight:600;
     padding:3px 7px; border-radius:5px; font-family:ui-monospace,'SF Mono',Consolas,monospace;
     letter-spacing:.3px;
   }
-  #radar-live{
+  #radar-live, #radar-live-2{
     position:absolute; top:8px; right:8px; z-index:500;
     display:flex; align-items:center; gap:5px;
     background:rgba(10,13,20,.75); font-size:8px; font-weight:700; letter-spacing:.8px;
@@ -299,11 +300,11 @@
       display:flex; flex-direction:column; gap:10px;
       grid-template-columns:none; grid-template-rows:none;
     }
-    .cg-cw, .cg-radar, .cg-5day, .cg-hourly, .cg-cal, .cg-solar, .cg-emp{
+    .cg-cw, .cg-radar, .cg-5day, .cg-hourly, .cg-cal, .cg-solar, .cg-emp, .cg-radar2{
       grid-column:auto; grid-row:auto;
     }
     .card{ padding:14px 16px; }
-    #radar-wrap{ height:220px; flex:0 0 auto; }
+    #radar-wrap, #radar-wrap-2{ height:220px; flex:0 0 auto; }
     #solar-chart{ height:150px; flex:0 0 auto; }
     #forecast{ grid-template-columns:repeat(5,1fr); }
     #hourly{ grid-template-columns:repeat(6,1fr); row-gap:14px; }
@@ -329,7 +330,7 @@
         <path d="M12 2L22 21H2L12 2Z" fill="url(#logoGrad)"/>
         <path d="M12 9L16.5 17.5H7.5L12 9Z" fill="#0A0D14"/>
       </svg>
-      <h1>HOME <span style="font-size:12px; font-weight:600; color:var(--text-faint); font-family:ui-monospace,'SF Mono',Consolas,monospace; letter-spacing:.5px; vertical-align:middle; margin-left:2px;">v2.11.0</span></h1>
+      <h1>HOME <span style="font-size:12px; font-weight:600; color:var(--text-faint); font-family:ui-monospace,'SF Mono',Consolas,monospace; letter-spacing:.5px; vertical-align:middle; margin-left:2px;">v2.12.0</span></h1>
       <span style="font-size:10px; font-weight:700; letter-spacing:1.5px; color:var(--text-faint); border:1px solid var(--line); border-radius:5px; padding:4px 8px; text-transform:uppercase; margin-left:4px;">
         Live Weather · Simulated Rest
       </span>
@@ -440,15 +441,15 @@
       </div>
     </div>
 
-    <!-- LIVE RADAR -->
+    <!-- LIVE RADAR (NEXRAD) -->
     <div class="card cg-radar">
       <div class="card-head">
         <div class="card-title">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="2"/><path d="M12 2a10 10 0 0 1 10 10M12 6a6 6 0 0 1 6 6M12 2v4M12 18v4M2 12h4M18 12h4"/></svg>
-          LIVE RADAR
+          LIVE RADAR · NEXRAD
         </div>
         <a class="card-link" href="https://mesonet.agron.iastate.edu/GIS/apps/rview/warnings.phtml" target="_blank" rel="noopener">
-          NEXRAD
+          Mesonet
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17 17 7M8 7h9v9"/></svg>
         </a>
       </div>
@@ -456,6 +457,25 @@
         <div id="radar-map"></div>
         <div id="radar-live"><span class="dot pulse" style="background:var(--green); box-shadow:0 0 6px var(--green);"></span>Live</div>
         <div id="radar-time">Loading radar…</div>
+      </div>
+    </div>
+
+    <!-- LIVE RADAR (RainViewer) -->
+    <div class="card cg-radar2">
+      <div class="card-head">
+        <div class="card-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="2"/><path d="M12 2a10 10 0 0 1 10 10M12 6a6 6 0 0 1 6 6M12 2v4M12 18v4M2 12h4M18 12h4"/></svg>
+          LIVE RADAR · RAINVIEWER
+        </div>
+        <a class="card-link" href="https://www.rainviewer.com/weather-radar-map-live.html" target="_blank" rel="noopener">
+          RainViewer
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17 17 7M8 7h9v9"/></svg>
+        </a>
+      </div>
+      <div id="radar-wrap-2">
+        <div id="radar-map-2"></div>
+        <div id="radar-live-2"><span class="dot pulse" style="background:var(--green); box-shadow:0 0 6px var(--green);"></span>Live</div>
+        <div id="radar-time-2">Loading radar…</div>
       </div>
     </div>
 
@@ -1275,10 +1295,83 @@ function showRadarFrame(i){
   const minutesAgo = (radarLayers.length - 1 - i) * 5;
   document.getElementById("radar-time").textContent = isLatest ? "Now" : `${minutesAgo} min ago`;
 }
+
+// ---- SECOND RADAR: RainViewer (the original animated-frame implementation,
+// kept running alongside the NEXRAD radar above as a second option). Uses
+// entirely separate variable names/map instance so the two don't interfere. ----
+let radarMap2 = null, rvLayers = [], rvFrameIdx = 0, rvCycleTimer = null;
+function initRadar2(){
+  try{
+    if(typeof L === "undefined") { document.getElementById("radar-time-2").textContent = "Leaflet failed to load"; return; }
+    radarMap2 = L.map("radar-map-2", { zoomControl: true, attributionControl: true }).setView([LAT, LON], 7);
+    const baseLayer2 = L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
+      attribution: '&copy; OpenStreetMap, &copy; CARTO',
+      maxZoom: 12, subdomains: "abcd"
+    }).addTo(radarMap2);
+
+    let baseTileOk2 = false, baseErrorShown2 = false;
+    baseLayer2.on("tileload", ()=>{ baseTileOk2 = true; });
+    baseLayer2.on("tileerror", ()=>{
+      if(!baseTileOk2 && !baseErrorShown2){
+        baseErrorShown2 = true;
+        document.getElementById("radar-time-2").textContent = "Map tiles blocked — check ad blocker / network";
+      }
+    });
+
+    loadRainviewerFrames();
+    setInterval(loadRainviewerFrames, 10*60*1000); // RainViewer refreshes data every ~10 min
+
+    [50, 300, 1000].forEach(ms => setTimeout(()=> radarMap2 && radarMap2.invalidateSize(), ms));
+    window.addEventListener("resize", ()=> radarMap2 && radarMap2.invalidateSize());
+    window.addEventListener("load", ()=> radarMap2 && radarMap2.invalidateSize());
+  }catch(err){
+    document.getElementById("radar-time-2").textContent = "Radar init error: " + err.message;
+    console.error("initRadar2 failed:", err);
+  }
+}
+async function loadRainviewerFrames(){
+  try{
+    const res = await fetch("https://api.rainviewer.com/public/weather-maps.json");
+    const data = await res.json();
+    const frames = (data.radar && data.radar.past) ? data.radar.past.slice(-8) : [];
+    if(!frames.length) return;
+
+    rvLayers.forEach(l => radarMap2.removeLayer(l));
+    rvLayers = frames.map(f =>
+      L.tileLayer(`${data.host}${f.path}/256/{z}/{x}/{y}/2/1_1.png`, { opacity: 0, zIndex: 10 })
+    );
+    rvLayers.forEach(l => l.addTo(radarMap2));
+    rvFrameIdx = rvLayers.length - 1;
+    showRvFrame(rvFrameIdx);
+    window.__rvFrameTimes = frames.map(f => f.time);
+
+    if(rvCycleTimer) clearInterval(rvCycleTimer);
+    rvCycleTimer = setInterval(()=>{
+      rvLayers[rvFrameIdx].setOpacity(0);
+      rvFrameIdx = (rvFrameIdx + 1) % rvLayers.length;
+      showRvFrame(rvFrameIdx);
+    }, 600);
+  }catch(e){
+    document.getElementById("radar-time-2").textContent = "Radar unavailable";
+    console.error(e);
+  }
+}
+function showRvFrame(i){
+  rvLayers[i].setOpacity(0.75);
+  const t = window.__rvFrameTimes && window.__rvFrameTimes[i];
+  if(t){
+    const isLatest = i === rvLayers.length - 1;
+    document.getElementById("radar-time-2").textContent =
+      (isLatest ? "Now · " : "") + new Date(t*1000).toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"});
+  }
+}
+
 if(document.readyState==="complete" || document.readyState==="interactive"){
   setTimeout(initRadar, 0);
+  setTimeout(initRadar2, 0);
 } else {
   document.addEventListener("DOMContentLoaded", initRadar);
+  document.addEventListener("DOMContentLoaded", initRadar2);
 }
 
 // ---- SETTINGS PANEL ----
@@ -1305,6 +1398,7 @@ document.getElementById("settings-save").addEventListener("click", ()=>{
   updateEmporia();          // reflect new rate immediately
   if(locChanged) loadWeather(); // re-fetch weather for the new location
   if(locChanged && radarMap) radarMap.setView([LAT, LON], 7);
+  if(locChanged && radarMap2) radarMap2.setView([LAT, LON], 7);
 });
 </script>
 </body>
