@@ -329,7 +329,7 @@
         <path d="M12 2L22 21H2L12 2Z" fill="url(#logoGrad)"/>
         <path d="M12 9L16.5 17.5H7.5L12 9Z" fill="#0A0D14"/>
       </svg>
-      <h1>HOME <span style="font-size:12px; font-weight:600; color:var(--text-faint); font-family:ui-monospace,'SF Mono',Consolas,monospace; letter-spacing:.5px; vertical-align:middle; margin-left:2px;">v2.9.0</span></h1>
+      <h1>HOME <span style="font-size:12px; font-weight:600; color:var(--text-faint); font-family:ui-monospace,'SF Mono',Consolas,monospace; letter-spacing:.5px; vertical-align:middle; margin-left:2px;">v2.11.0</span></h1>
       <span style="font-size:10px; font-weight:700; letter-spacing:1.5px; color:var(--text-faint); border:1px solid var(--line); border-radius:5px; padding:4px 8px; text-transform:uppercase; margin-left:4px;">
         Live Weather · Simulated Rest
       </span>
@@ -402,17 +402,28 @@
         </div>
       </div>
       <div id="wx-stats">
-        <div class="wstat">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2s6 7 6 11a6 6 0 1 1-12 0c0-4 6-11 6-11Z"/></svg>
-          <div><div class="v" id="wx-hum">--%</div><div class="l">Humidity</div></div>
-        </div>
-        <div class="wstat">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8h11a3 3 0 1 0-3-3M3 16h15a3 3 0 1 1-3 3M3 12h8"/></svg>
-          <div><div class="v" id="wx-wind">-- mph</div><div class="l">Wind</div></div>
+        <div class="wstat sun">
+          <div class="sunrow">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2s6 7 6 11a6 6 0 1 1-12 0c0-4 6-11 6-11Z"/></svg>
+            <span class="v" id="wx-hum">--%</span>
+          </div>
+          <div class="l" style="margin-left:21px;">Humidity</div>
+          <div class="sunrow" style="margin-top:4px;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8h11a3 3 0 1 0-3-3M3 16h15a3 3 0 1 1-3 3M3 12h8"/></svg>
+            <span class="v" id="wx-wind">-- mph</span>
+          </div>
+          <div class="l" style="margin-left:21px;">Wind</div>
         </div>
         <div class="wstat">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
-          <div><div class="v" id="wx-press">-- in</div><div class="l">Pressure</div></div>
+          <div>
+            <div class="v"><span id="wx-press">-- in</span> <svg id="wx-press-trend" viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align:middle; display:none;"><path d="M12 19V5M5 12l7-7 7 7"/></svg></div>
+            <div class="l">Pressure</div>
+          </div>
+        </div>
+        <div class="wstat">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17V9M12 17V5M17 17v-5"/></svg>
+          <div><div class="v" id="wx-hilo">--° / --°</div><div class="l">High / Low</div></div>
         </div>
         <div class="wstat sun">
           <div class="sunrow">
@@ -758,6 +769,38 @@ function degToCompass(deg){
   const dirs = ["N","NNE","NE","ENE","E","ESE","SE","SSE","S","SSW","SW","WSW","W","WNW","NW","NNW"];
   return dirs[Math.round(deg/22.5) % 16];
 }
+// Barometric trend arrow — no extra API call: each 15-min poll appends the
+// current reading to a client-side history, pruned to the last 6 hours.
+// Compares against the oldest reading within the last 3 hours (the standard
+// window weather apps use for "rising/falling") once enough history exists.
+window.__pressureHistory = [];
+function updatePressureTrend(currentInHg){
+  const arrow = document.getElementById("wx-press-trend");
+  if(currentInHg == null){ arrow.style.display = "none"; return; }
+
+  const now = Date.now();
+  window.__pressureHistory.push({ t: now, v: currentInHg });
+  window.__pressureHistory = window.__pressureHistory.filter(p => now - p.t <= 6*3600*1000);
+
+  const threeHoursAgo = now - 3*3600*1000;
+  const reference = window.__pressureHistory.find(p => p.t <= threeHoursAgo) || window.__pressureHistory[0];
+  if(!reference || reference === window.__pressureHistory[window.__pressureHistory.length-1]){
+    arrow.style.display = "none"; // not enough history yet
+    return;
+  }
+
+  const delta = currentInHg - reference.v;
+  const threshold = 0.02; // inHg — small deltas count as steady, not noise
+  arrow.style.display = "inline";
+  if(delta > threshold){
+    arrow.style.transform = "rotate(0deg)"; arrow.style.color = "var(--green)"; // rising
+  } else if(delta < -threshold){
+    arrow.style.transform = "rotate(180deg)"; arrow.style.color = "var(--red)"; // falling
+  } else {
+    arrow.style.transform = "rotate(90deg)"; arrow.style.color = "var(--text-dim)"; // steady
+  }
+}
+
 function nwsToCode(iconUrl, text){
   const s = ((iconUrl||"") + " " + (text||"")).toLowerCase();
   if(s.includes("tsra") || s.includes("thunder")) return 95;
@@ -846,6 +889,7 @@ async function loadWeather(){
     const curWindDir = degToCompass(cur.windDirection?.value);
     document.getElementById("wx-wind").textContent = Math.round(curWindMph)+" mph"+(curWindDir?" "+curWindDir:"");
     document.getElementById("wx-press").textContent = (curPressIn!=null ? curPressIn.toFixed(2) : "--")+" in";
+    updatePressureTrend(curPressIn);
     document.getElementById("h-temp").textContent = Math.round(curTempF)+"°F";
     document.getElementById("wx-feels").innerHTML = `${feelsLabel} <b>${Math.round(feelsF)}°</b>`;
     document.getElementById("wx-sunrise").textContent = sun.sunrise.toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"});
@@ -920,6 +964,12 @@ async function loadWeather(){
     }
     const todayKey = now.toDateString();
     const days = Array.from(dayMap.values()).sort((a,b)=>a.date-b.date).slice(0,5);
+    const todayEntry = days.find(d => d.date.toDateString() === todayKey);
+    if(todayEntry){
+      const hiTxt = todayEntry.hi!=null ? Math.round(todayEntry.hi)+"°" : "--°";
+      const loTxt = todayEntry.lo!=null ? Math.round(todayEntry.lo)+"°" : "--°";
+      document.getElementById("wx-hilo").textContent = `${hiTxt} / ${loTxt}`;
+    }
     const el = document.getElementById("forecast"); el.innerHTML="";
     days.forEach(entry=>{
       const label = entry.date.toDateString()===todayKey ? "TODAY" : entry.date.toLocaleDateString("en-US",{weekday:"short"}).toUpperCase();
