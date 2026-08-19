@@ -259,11 +259,31 @@
   svg{overflow:visible;}
 
   /* ---- lunch menu card ---- */
-  #lunch-nav{ display:flex; align-items:center; justify-content:center; gap:14px; margin-bottom:10px; flex:0 0 auto; }
-  #lunch-nav svg{ width:16px; height:16px; color:var(--text-dim); cursor:pointer; flex-shrink:0; }
-  #lunch-nav svg:hover{ color:var(--text); }
-  #lunch-date-label{ font-size:13px; font-weight:700; color:var(--text); min-width:150px; text-align:center; }
-  #lunch-text{ font-size:14px; color:var(--text); line-height:1.5; text-align:center; flex:1; display:flex; align-items:center; justify-content:center; padding:0 8px; }
+  .cg-lunch{ position:relative; overflow:hidden; }
+  .cg-lunch::before{
+    content:""; position:absolute; top:0; left:0; right:0; height:4px;
+    background:linear-gradient(90deg, #FF6B6B, #F5C042, #3FD97F, #5B8DEF, #8B7CF6, #FF6B6B);
+    background-size:200% 100%;
+    animation:lunch-rainbow 6s linear infinite;
+  }
+  @keyframes lunch-rainbow{ to{ background-position:-200% 0; } }
+  @keyframes lunch-bounce{ 0%,100%{ transform:translateY(0) rotate(-4deg); } 50%{ transform:translateY(-6px) rotate(4deg); } }
+  #lunch-body{ display:flex; align-items:center; gap:16px; flex:1; min-height:0; padding-top:4px; }
+  #lunch-emoji{ font-size:44px; line-height:1; flex-shrink:0; animation:lunch-bounce 2.4s ease-in-out infinite; filter:drop-shadow(0 2px 6px rgba(0,0,0,.4)); }
+  #lunch-info{ flex:1; min-width:0; display:flex; flex-direction:column; align-items:center; text-align:center; }
+  #lunch-nav{ display:flex; align-items:center; justify-content:center; gap:12px; margin-bottom:8px; }
+  .lunch-navbtn{
+    width:26px; height:26px; border-radius:50%; border:none; cursor:pointer;
+    background:linear-gradient(135deg, #F5C042, #FF6B6B);
+    color:#1a0f00; font-size:16px; font-weight:900; line-height:1;
+    display:flex; align-items:center; justify-content:center;
+    box-shadow:0 2px 6px rgba(245,192,66,.3);
+    transition:transform .15s;
+  }
+  .lunch-navbtn:hover{ transform:scale(1.15); }
+  .lunch-navbtn:active{ transform:scale(.9); }
+  #lunch-date-label{ font-size:13px; font-weight:800; color:var(--text); min-width:130px; text-align:center; }
+  #lunch-text{ font-size:13px; color:var(--text); line-height:1.5; }
   #lunch-text.empty{ color:var(--text-faint); font-style:italic; font-size:12px; }
 
   /* ---- Leaflet core rendering rules, inlined ----
@@ -339,7 +359,7 @@
         <path d="M12 2L22 21H2L12 2Z" fill="url(#logoGrad)"/>
         <path d="M12 9L16.5 17.5H7.5L12 9Z" fill="#0A0D14"/>
       </svg>
-      <h1>HOME <span style="font-size:12px; font-weight:600; color:var(--text-faint); font-family:ui-monospace,'SF Mono',Consolas,monospace; letter-spacing:.5px; vertical-align:middle; margin-left:2px;">v2.15.0</span></h1>
+      <h1>HOME <span style="font-size:12px; font-weight:600; color:var(--text-faint); font-family:ui-monospace,'SF Mono',Consolas,monospace; letter-spacing:.5px; vertical-align:middle; margin-left:2px;">v2.15.1</span></h1>
       <span style="font-size:10px; font-weight:700; letter-spacing:1.5px; color:var(--text-faint); border:1px solid var(--line); border-radius:5px; padding:4px 8px; text-transform:uppercase; margin-left:4px;">
         Live Weather · Simulated Rest
       </span>
@@ -637,16 +657,21 @@
     <div class="card cg-lunch">
       <div class="card-head">
         <div class="card-title">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 3v18M6 3a3 3 0 0 1 3 3v4a3 3 0 0 1-3 3M18 3v18M18 8a3 3 0 0 0-3 3v0a3 3 0 0 0 3 3"/></svg>
+          <span style="font-size:14px;">🍎</span>
           LUNCH MENU
         </div>
       </div>
-      <div id="lunch-nav">
-        <svg id="lunch-prev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
-        <span id="lunch-date-label">—</span>
-        <svg id="lunch-next" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+      <div id="lunch-body">
+        <div id="lunch-emoji">🍽️</div>
+        <div id="lunch-info">
+          <div id="lunch-nav">
+            <button id="lunch-prev" class="lunch-navbtn">‹</button>
+            <span id="lunch-date-label">—</span>
+            <button id="lunch-next" class="lunch-navbtn">›</button>
+          </div>
+          <div id="lunch-text">—</div>
+        </div>
       </div>
-      <div id="lunch-text">—</div>
     </div>
   </div>
 
@@ -1510,6 +1535,22 @@ document.getElementById("lunch-file").addEventListener("change", async (e)=>{
 });
 
 let lunchSelectedDate = new Date();
+// Picks a fun emoji based on keywords in the menu text — purely cosmetic,
+// falls back to a generic plate if nothing matches.
+function lunchEmojiFor(text){
+  const t = (text || "").toLowerCase();
+  const rules = [
+    [/field day/, "🎉"], [/pizza/, "🍕"], [/taco/, "🌮"], [/burrito|wrap/, "🌯"],
+    [/hot dog/, "🌭"], [/hamburger|burger/, "🍔"], [/chicken/, "🍗"],
+    [/turkey/, "🦃"], [/pasta|alfredo|spaghetti/, "🍝"],
+    [/sandwich|melt|bagel|toast/, "🥪"], [/soup/, "🍲"],
+    [/salad/, "🥗"], [/grilled cheese/, "🧀"], [/pancake|hashbrown|brunch/, "🥞"],
+    [/fish/, "🐟"], [/no menu/, "😴"],
+  ];
+  for(const [re, emoji] of rules){ if(re.test(t)) return emoji; }
+  return "🍽️";
+}
+
 function renderLunchCard(){
   const menu = lunchGetMenu();
   const key = lunchSelectedDate.toISOString().slice(0,10);
@@ -1521,12 +1562,15 @@ function renderLunchCard(){
   document.getElementById("lunch-date-label").textContent = isToday ? `Today · ${label}` : label;
 
   const textEl = document.getElementById("lunch-text");
+  const emojiEl = document.getElementById("lunch-emoji");
   if(menu[key]){
     textEl.textContent = menu[key];
     textEl.className = "";
+    emojiEl.textContent = lunchEmojiFor(menu[key]);
   } else {
     textEl.textContent = "No menu for this day";
     textEl.className = "empty";
+    emojiEl.textContent = "📭";
   }
 }
 document.getElementById("lunch-prev").addEventListener("click", ()=>{
