@@ -358,7 +358,7 @@
         <path d="M12 2L22 21H2L12 2Z" fill="url(#logoGrad)"/>
         <path d="M12 9L16.5 17.5H7.5L12 9Z" fill="#0A0D14"/>
       </svg>
-      <h1>HOME <span style="font-size:12px; font-weight:600; color:var(--text-faint); font-family:ui-monospace,'SF Mono',Consolas,monospace; letter-spacing:.5px; vertical-align:middle; margin-left:2px;">v2.17.1</span></h1>
+      <h1>HOME <span style="font-size:12px; font-weight:600; color:var(--text-faint); font-family:ui-monospace,'SF Mono',Consolas,monospace; letter-spacing:.5px; vertical-align:middle; margin-left:2px;">v2.18.0</span></h1>
       <span style="font-size:10px; font-weight:700; letter-spacing:1.5px; color:var(--text-faint); border:1px solid var(--line); border-radius:5px; padding:4px 8px; text-transform:uppercase; margin-left:4px;">
         Live Weather · Simulated Rest
       </span>
@@ -1151,6 +1151,12 @@ async function loadRealEmporiaData(){
     // so an exact match can silently miss a channel that's actually there.
     const norm = s => (s || "").trim().toLowerCase();
     const main = data.channels.find(c => norm(c.name) === "totalusage");
+    // "Balance" is Emporia's own computed net flow at the main panel — since
+    // solar ties into the same panel, this should already reflect real
+    // usage-minus-solar without any simulation. Worth checking the sign
+    // convention once real data flows: positive likely = net importing from
+    // the grid, negative = net exporting excess solar.
+    const balance = data.channels.find(c => norm(c.name) === "balance");
     // The EV charger is a separate physical device, not a monitored circuit
     // — it comes from data.charger (populated via pyemvue's get_chargers()),
     // not from searching the channels list at all.
@@ -1162,6 +1168,14 @@ async function loadRealEmporiaData(){
       window.__realEmporia.todayKwh = main.usage_kwh_today;
       window.__realEmporia.monthKwh = main.usage_kwh_month;
       window.__realEmporia.updated = data.updated_utc;
+      changed = true;
+    }
+    if(balance && balance.usage_kwh_last_min != null){
+      window.__realEmporia = window.__realEmporia || {};
+      // Emporia's "Balance" convention isn't confirmed yet — displaying the
+      // raw signed kW as-is; flip the sign here if it turns out inverted
+      // once real numbers are visible on the card.
+      window.__realEmporia.netKw = balance.usage_kwh_last_min * 60;
       changed = true;
     }
     if(charger && charger.charger_on != null){
@@ -1200,8 +1214,14 @@ function updateEmporia(){
   document.getElementById("emp-home-today").textContent = (homeKwh!=null ? homeKwh.toFixed(1) : "--")+" kWh";
   document.getElementById("emp-home-month").textContent = (homeKwhMonth!=null ? Math.round(homeKwhMonth) : "--")+" kWh";
   const solarKw = kwAtHour(hFloat) * window.SIM.weather.cloudFactor;
-  const net = solarKw - homeKw;
-  document.getElementById("emp-home-net").textContent = (net>=0 ? "+" : "") + net.toFixed(1) + " kW";
+  let net, netIsReal = false;
+  if(real && real.netKw != null){
+    net = real.netKw; // raw Balance value — sign convention not yet confirmed against real data
+    netIsReal = true;
+  } else {
+    net = solarKw - homeKw;
+  }
+  document.getElementById("emp-home-net").textContent = (net>=0 ? "+" : "") + net.toFixed(1) + " kW" + (netIsReal ? "" : "*");
   document.getElementById("emp-home-cost").textContent = "$" + ((homeKwh||0)*window.SETTINGS.rateKwh).toFixed(2);
   const homeLiveNote = document.getElementById("emp-home-live-note");
   if(homeLiveNote) homeLiveNote.textContent = real ? "Live draw" : "Live draw (simulated)";
