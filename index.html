@@ -358,7 +358,7 @@
         <path d="M12 2L22 21H2L12 2Z" fill="url(#logoGrad)"/>
         <path d="M12 9L16.5 17.5H7.5L12 9Z" fill="#0A0D14"/>
       </svg>
-      <h1>HOME <span style="font-size:12px; font-weight:600; color:var(--text-faint); font-family:ui-monospace,'SF Mono',Consolas,monospace; letter-spacing:.5px; vertical-align:middle; margin-left:2px;">v2.17.0</span></h1>
+      <h1>HOME <span style="font-size:12px; font-weight:600; color:var(--text-faint); font-family:ui-monospace,'SF Mono',Consolas,monospace; letter-spacing:.5px; vertical-align:middle; margin-left:2px;">v2.17.1</span></h1>
       <span style="font-size:10px; font-weight:700; letter-spacing:1.5px; color:var(--text-faint); border:1px solid var(--line); border-radius:5px; padding:4px 8px; text-transform:uppercase; margin-left:4px;">
         Live Weather · Simulated Rest
       </span>
@@ -1245,7 +1245,7 @@ setInterval(updateEmporia, 5000);
 // spending a few full animation loops at each before switching — so the
 // radar naturally shows nearby detail, then pulls back for the bigger
 // picture, on repeat.
-const RADAR_ZOOM_LOCAL = 9, RADAR_ZOOM_REGIONAL = 6, RADAR_LOOPS_PER_MODE = 3;
+const RADAR_ZOOM_LOCAL = 7, RADAR_ZOOM_REGIONAL = 6, RADAR_LOOPS_PER_MODE = 3;
 let radarZoomMode = "local", radarLoopsCompleted = 0;
 
 let radarMap2 = null, rvLayers = [], rvFrameIdx = 0, rvCycleTimer = null;
