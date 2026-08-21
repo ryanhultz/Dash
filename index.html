@@ -53,7 +53,7 @@
     flex:1; min-height:0;
     display:grid;
     grid-template-columns:repeat(4,1fr);
-    grid-template-rows:repeat(5,1fr);
+    grid-template-rows:repeat(4,1fr);
     gap:8px;
   }
   .cg-cw{ grid-column:1; grid-row:1; display:flex; flex-direction:column; }
@@ -63,8 +63,7 @@
   .cg-cal{ grid-column:1; grid-row:3; display:flex; flex-direction:column; }
   .cg-solar{ grid-column:2/4; grid-row:3; display:flex; flex-direction:column; }
   .cg-emp{ grid-column:4; grid-row:3; display:flex; flex-direction:column; }
-  .cg-radar2{ grid-column:1/5; grid-row:4; display:flex; flex-direction:column; }
-  .cg-lunch{ grid-column:1/5; grid-row:5; display:flex; flex-direction:column; }
+  .cg-lunch{ grid-column:1/5; grid-row:4; display:flex; flex-direction:column; }
 
   .card{
     background:var(--panel);
@@ -143,15 +142,15 @@
   .wicon-md{ width:25px; height:25px; }
 
   /* ---- radar ---- */
-  #radar-wrap, #radar-wrap-2{ position:relative; border-radius:10px; overflow:hidden; border:1px solid var(--line); flex:1; min-height:0; }
-  #radar-map, #radar-map-2{ position:absolute; inset:0; width:100%; height:100%; background:#0d1218; }
-  #radar-time, #radar-time-2{
+  #radar-wrap-2{ position:relative; border-radius:10px; overflow:hidden; border:1px solid var(--line); flex:1; min-height:0; }
+  #radar-map-2{ position:absolute; inset:0; width:100%; height:100%; background:#0d1218; }
+  #radar-time-2{
     position:absolute; bottom:8px; left:8px; z-index:500;
     background:rgba(10,13,20,.75); color:var(--text); font-size:9px; font-weight:600;
     padding:3px 7px; border-radius:5px; font-family:ui-monospace,'SF Mono',Consolas,monospace;
     letter-spacing:.3px;
   }
-  #radar-live, #radar-live-2{
+  #radar-live-2{
     position:absolute; top:8px; right:8px; z-index:500;
     display:flex; align-items:center; gap:5px;
     background:rgba(10,13,20,.75); font-size:8px; font-weight:700; letter-spacing:.8px;
@@ -329,11 +328,11 @@
       display:flex; flex-direction:column; gap:10px;
       grid-template-columns:none; grid-template-rows:none;
     }
-    .cg-cw, .cg-radar, .cg-5day, .cg-hourly, .cg-cal, .cg-solar, .cg-emp, .cg-radar2, .cg-lunch{
+    .cg-cw, .cg-radar, .cg-5day, .cg-hourly, .cg-cal, .cg-solar, .cg-emp, .cg-lunch{
       grid-column:auto; grid-row:auto;
     }
     .card{ padding:14px 16px; }
-    #radar-wrap, #radar-wrap-2{ height:220px; flex:0 0 auto; }
+    #radar-wrap-2{ height:220px; flex:0 0 auto; }
     #solar-chart{ height:150px; flex:0 0 auto; }
     #forecast{ grid-template-columns:repeat(5,1fr); }
     #hourly{ grid-template-columns:repeat(6,1fr); row-gap:14px; }
@@ -359,7 +358,7 @@
         <path d="M12 2L22 21H2L12 2Z" fill="url(#logoGrad)"/>
         <path d="M12 9L16.5 17.5H7.5L12 9Z" fill="#0A0D14"/>
       </svg>
-      <h1>HOME <span style="font-size:12px; font-weight:600; color:var(--text-faint); font-family:ui-monospace,'SF Mono',Consolas,monospace; letter-spacing:.5px; vertical-align:middle; margin-left:2px;">v2.15.1</span></h1>
+      <h1>HOME <span style="font-size:12px; font-weight:600; color:var(--text-faint); font-family:ui-monospace,'SF Mono',Consolas,monospace; letter-spacing:.5px; vertical-align:middle; margin-left:2px;">v2.17.0</span></h1>
       <span style="font-size:10px; font-weight:700; letter-spacing:1.5px; color:var(--text-faint); border:1px solid var(--line); border-radius:5px; padding:4px 8px; text-transform:uppercase; margin-left:4px;">
         Live Weather · Simulated Rest
       </span>
@@ -477,31 +476,12 @@
       </div>
     </div>
 
-    <!-- LIVE RADAR (NEXRAD) -->
+    <!-- LIVE RADAR -->
     <div class="card cg-radar">
       <div class="card-head">
         <div class="card-title">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="2"/><path d="M12 2a10 10 0 0 1 10 10M12 6a6 6 0 0 1 6 6M12 2v4M12 18v4M2 12h4M18 12h4"/></svg>
-          LIVE RADAR · NEXRAD
-        </div>
-        <a class="card-link" href="https://mesonet.agron.iastate.edu/GIS/apps/rview/warnings.phtml" target="_blank" rel="noopener">
-          Mesonet
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17 17 7M8 7h9v9"/></svg>
-        </a>
-      </div>
-      <div id="radar-wrap">
-        <div id="radar-map"></div>
-        <div id="radar-live"><span class="dot pulse" style="background:var(--green); box-shadow:0 0 6px var(--green);"></span>Live</div>
-        <div id="radar-time">Loading radar…</div>
-      </div>
-    </div>
-
-    <!-- LIVE RADAR (RainViewer) -->
-    <div class="card cg-radar2">
-      <div class="card-head">
-        <div class="card-title">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="2"/><path d="M12 2a10 10 0 0 1 10 10M12 6a6 6 0 0 1 6 6M12 2v4M12 18v4M2 12h4M18 12h4"/></svg>
-          LIVE RADAR · RAINVIEWER
+          LIVE RADAR
         </div>
         <a class="card-link" href="https://www.rainviewer.com/weather-radar-map-live.html" target="_blank" rel="noopener">
           RainViewer
@@ -1260,107 +1240,19 @@ window.SETTINGS = { rateKwh: 0.16 };
 updateEmporia();
 setInterval(updateEmporia, 5000);
 
-// ---- LIVE RADAR (NEXRAD via Iowa State Mesonet + Leaflet, dark CARTO basemap) ----
-// Switched from RainViewer's animated multi-frame loop to a single live
-// NEXRAD tile layer — same underlying NWS radar data, but served as plain
-// XYZ tiles (like the CARTO basemap already is) instead of a WMS endpoint
-// with layer IDs that are easy to get wrong and hard to verify blind.
-let radarMap = null, radarLayers = [], radarFrameIdx = 0, radarCycleTimer = null;
-function initRadar(){
-  try{
-    if(typeof L === "undefined") { document.getElementById("radar-time").textContent = "Leaflet failed to load (script blocked?)"; return; }
-    radarMap = L.map("radar-map", { zoomControl: true, attributionControl: true }).setView([LAT, LON], 7);
-    const baseLayer = L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
-      attribution: '&copy; OpenStreetMap, &copy; CARTO',
-      maxZoom: 12, subdomains: "abcd"
-    }).addTo(radarMap);
+// ---- LIVE RADAR (RainViewer + Leaflet, dark CARTO basemap) ----
+// Alternates between a close-in "local" zoom and a wider "regional" zoom,
+// spending a few full animation loops at each before switching — so the
+// radar naturally shows nearby detail, then pulls back for the bigger
+// picture, on repeat.
+const RADAR_ZOOM_LOCAL = 9, RADAR_ZOOM_REGIONAL = 6, RADAR_LOOPS_PER_MODE = 3;
+let radarZoomMode = "local", radarLoopsCompleted = 0;
 
-    // Surface tile failures instead of leaving a silent blank box — this is
-    // the single biggest diagnostic gap when a map "shows nothing": the
-    // container can be sized correctly while every tile request 404s or gets
-    // blocked (ad blocker, DNS block, offline), and nothing else would tell you.
-    let baseTileOk = false, baseErrorShown = false;
-    baseLayer.on("tileload", ()=>{ baseTileOk = true; });
-    baseLayer.on("tileerror", ()=>{
-      if(!baseTileOk && !baseErrorShown){
-        baseErrorShown = true;
-        document.getElementById("radar-time").textContent = "Map tiles blocked — check ad blocker / network";
-      }
-    });
-
-    buildRadarLoop();
-    setInterval(buildRadarLoop, 5*60*1000); // rebuild so the offsets stay current as real time moves on
-
-    // The grid/flex layout that sizes #radar-map isn't guaranteed to have
-    // settled the instant the map initializes (fonts, grid row heights, etc.
-    // resolve slightly after first paint). Leaflet caches whatever pixel size
-    // it sees at init — if that's wrong, tiles stay blank forever even once
-    // the container is properly sized. Force a few recomputes to catch up.
-    [50, 300, 1000].forEach(ms => setTimeout(()=> radarMap && radarMap.invalidateSize(), ms));
-    setTimeout(()=>{
-      if(!radarMap) return;
-      const sz = radarMap.getSize();
-      console.log(`[radar] container size: ${sz.x}×${sz.y}px`);
-      if(sz.x < 10 || sz.y < 10){
-        document.getElementById("radar-live").textContent = `⚠ ${Math.round(sz.x)}×${Math.round(sz.y)}px`;
-      }
-    }, 1200);
-    window.addEventListener("resize", ()=> radarMap && radarMap.invalidateSize());
-    window.addEventListener("load", ()=> radarMap && radarMap.invalidateSize());
-  }catch(err){
-    document.getElementById("radar-time").textContent = "Radar init error: " + err.message;
-    console.error("initRadar failed:", err);
-  }
-}
-
-// Iowa Mesonet's tile cache supports relative-time suffixes on the NEXRAD
-// layer (documented pattern: nexrad-n0q-900913-mNNm for NN minutes ago, or
-// no suffix for the current mosaic) in 5-minute steps. Building one tile
-// layer per offset and cycling their opacity is the same technique the
-// original RainViewer loop used, just pointed at a different tile source.
-const RADAR_OFFSETS = ["m50m","m45m","m40m","m35m","m30m","m25m","m20m","m15m","m10m","m05m",""];
-function buildRadarLoop(){
-  try{
-    radarLayers.forEach(l => radarMap.removeLayer(l));
-    radarLayers = RADAR_OFFSETS.map(off => {
-      const suffix = off ? `900913-${off}` : "900913";
-      return L.tileLayer(`https://mesonet.agron.iastate.edu/cache/tile.py/1.0.0/nexrad-n0q-${suffix}/{z}/{x}/{y}.png`, { opacity: 0, zIndex: 10 });
-    });
-    let firstLoaded = false;
-    radarLayers[radarLayers.length-1].on("tileerror", ()=>{
-      if(!firstLoaded) document.getElementById("radar-time").textContent = "Radar tiles unavailable";
-    });
-    radarLayers[radarLayers.length-1].on("tileload", ()=>{ firstLoaded = true; });
-    radarLayers.forEach(l => l.addTo(radarMap));
-    radarFrameIdx = radarLayers.length - 1;
-    showRadarFrame(radarFrameIdx);
-
-    if(radarCycleTimer) clearInterval(radarCycleTimer);
-    radarCycleTimer = setInterval(()=>{
-      radarLayers[radarFrameIdx].setOpacity(0);
-      radarFrameIdx = (radarFrameIdx + 1) % radarLayers.length;
-      showRadarFrame(radarFrameIdx);
-    }, 600);
-  }catch(e){
-    document.getElementById("radar-time").textContent = "Radar unavailable";
-    console.error(e);
-  }
-}
-function showRadarFrame(i){
-  radarLayers[i].setOpacity(0.75);
-  const isLatest = i === radarLayers.length - 1;
-  const minutesAgo = (radarLayers.length - 1 - i) * 5;
-  document.getElementById("radar-time").textContent = isLatest ? "Now" : `${minutesAgo} min ago`;
-}
-
-// ---- SECOND RADAR: RainViewer (the original animated-frame implementation,
-// kept running alongside the NEXRAD radar above as a second option). Uses
-// entirely separate variable names/map instance so the two don't interfere. ----
 let radarMap2 = null, rvLayers = [], rvFrameIdx = 0, rvCycleTimer = null;
 function initRadar2(){
   try{
     if(typeof L === "undefined") { document.getElementById("radar-time-2").textContent = "Leaflet failed to load"; return; }
-    radarMap2 = L.map("radar-map-2", { zoomControl: true, attributionControl: true }).setView([LAT, LON], 7);
+    radarMap2 = L.map("radar-map-2", { zoomControl: true, attributionControl: true }).setView([LAT, LON], RADAR_ZOOM_LOCAL);
     const baseLayer2 = L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
       attribution: '&copy; OpenStreetMap, &copy; CARTO',
       maxZoom: 12, subdomains: "abcd"
@@ -1375,6 +1267,7 @@ function initRadar2(){
       }
     });
 
+    radarUpdateModeLabel();
     loadRainviewerFrames();
     setInterval(loadRainviewerFrames, 10*60*1000); // RainViewer refreshes data every ~10 min
 
@@ -1385,6 +1278,11 @@ function initRadar2(){
     document.getElementById("radar-time-2").textContent = "Radar init error: " + err.message;
     console.error("initRadar2 failed:", err);
   }
+}
+function radarUpdateModeLabel(){
+  const el = document.getElementById("radar-live-2");
+  if(!el) return;
+  el.innerHTML = `<span class="dot pulse" style="background:var(--green); box-shadow:0 0 6px var(--green);"></span>Live · ${radarZoomMode === "local" ? "Local" : "Regional"}`;
 }
 async function loadRainviewerFrames(){
   try{
@@ -1405,8 +1303,20 @@ async function loadRainviewerFrames(){
     if(rvCycleTimer) clearInterval(rvCycleTimer);
     rvCycleTimer = setInterval(()=>{
       rvLayers[rvFrameIdx].setOpacity(0);
+      const completingLoop = rvFrameIdx === rvLayers.length - 1; // about to wrap back to frame 0
       rvFrameIdx = (rvFrameIdx + 1) % rvLayers.length;
       showRvFrame(rvFrameIdx);
+
+      if(completingLoop){
+        radarLoopsCompleted++;
+        if(radarLoopsCompleted >= RADAR_LOOPS_PER_MODE){
+          radarLoopsCompleted = 0;
+          radarZoomMode = radarZoomMode === "local" ? "regional" : "local";
+          const newZoom = radarZoomMode === "local" ? RADAR_ZOOM_LOCAL : RADAR_ZOOM_REGIONAL;
+          if(radarMap2) radarMap2.setZoom(newZoom);
+          radarUpdateModeLabel();
+        }
+      }
     }, 600);
   }catch(e){
     document.getElementById("radar-time-2").textContent = "Radar unavailable";
@@ -1424,10 +1334,8 @@ function showRvFrame(i){
 }
 
 if(document.readyState==="complete" || document.readyState==="interactive"){
-  setTimeout(initRadar, 0);
   setTimeout(initRadar2, 0);
 } else {
-  document.addEventListener("DOMContentLoaded", initRadar);
   document.addEventListener("DOMContentLoaded", initRadar2);
 }
 
@@ -1454,7 +1362,6 @@ document.getElementById("settings-save").addEventListener("click", ()=>{
   closeSettings();
   updateEmporia();          // reflect new rate immediately
   if(locChanged) loadWeather(); // re-fetch weather for the new location
-  if(locChanged && radarMap) radarMap.setView([LAT, LON], 7);
   if(locChanged && radarMap2) radarMap2.setView([LAT, LON], 7);
 });
 
