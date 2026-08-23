@@ -358,7 +358,7 @@
         <path d="M12 2L22 21H2L12 2Z" fill="url(#logoGrad)"/>
         <path d="M12 9L16.5 17.5H7.5L12 9Z" fill="#0A0D14"/>
       </svg>
-      <h1>HOME <span style="font-size:12px; font-weight:600; color:var(--text-faint); font-family:ui-monospace,'SF Mono',Consolas,monospace; letter-spacing:.5px; vertical-align:middle; margin-left:2px;">v2.18.0</span></h1>
+      <h1>HOME <span style="font-size:12px; font-weight:600; color:var(--text-faint); font-family:ui-monospace,'SF Mono',Consolas,monospace; letter-spacing:.5px; vertical-align:middle; margin-left:2px;">v2.19.1</span></h1>
       <span style="font-size:10px; font-weight:700; letter-spacing:1.5px; color:var(--text-faint); border:1px solid var(--line); border-radius:5px; padding:4px 8px; text-transform:uppercase; margin-left:4px;">
         Live Weather · Simulated Rest
       </span>
@@ -858,20 +858,34 @@ function updatePressureTrend(currentInHg){
   }
 }
 
-function nwsToCode(iconUrl, text){
+function nwsToCode(iconUrl, text, pop){
   const s = ((iconUrl||"") + " " + (text||"")).toLowerCase();
-  if(s.includes("tsra") || s.includes("thunder")) return 95;
-  if(s.includes("snow") || s.includes("sleet") || s.includes("blizzard") || s.includes("ice")) return 73;
-  if(s.includes("fzra") || s.includes("freezing rain")) return 66;
-  if(s.includes("shower")) return 80;
-  if(s.includes("drizzle")) return 55;
-  if(s.includes("rain")) return 63;
+  // NWS's shortForecast text often hedges — "Slight Chance Rain Showers",
+  // "Isolated Thunderstorms" — which shouldn't dominate the icon the way a
+  // genuinely rainy hour should. Require a real probability before letting
+  // a precip keyword override the base sky condition. When pop isn't
+  // passed in (daily-forecast callers, or hedge-less text), fall back to
+  // the old keyword-only behavior rather than silently hiding real weather.
+  const popKnown = pop != null;
+  const meaningfulPop = !popKnown || pop >= 40;
+  if(meaningfulPop){
+    if(s.includes("tsra") || s.includes("thunder")) return 95;
+    if(s.includes("snow") || s.includes("sleet") || s.includes("blizzard") || s.includes("ice")) return 73;
+    if(s.includes("fzra") || s.includes("freezing rain")) return 66;
+    if(s.includes("shower")) return 80;
+    if(s.includes("drizzle")) return 55;
+    if(s.includes("rain")) return 63;
+  }
   if(s.includes("fog") || s.includes("haze") || s.includes("smoke")) return 45;
   if(s.includes("skc") || s.includes(" clear") || s.includes("sunny")) return 0;
   if(s.includes("few")) return 1;
   if(s.includes("sct") || s.includes("partly")) return 2;
   if(s.includes("bkn") || s.includes("mostly cloudy")) return 2;
   if(s.includes("ovc") || s.includes("overcast") || s.includes("cloudy")) return 3;
+  // Text was precip-flavored but probability was low — best fallback is
+  // "mostly cloudy" rather than defaulting all the way to overcast (3),
+  // since a low-probability rain mention usually means some cloud cover.
+  if(!meaningfulPop && (s.includes("shower")||s.includes("rain")||s.includes("thunder")||s.includes("snow")||s.includes("drizzle"))) return 2;
   return 3;
 }
 
@@ -958,8 +972,8 @@ async function loadWeather(){
       const p = hourly[i];
       const hDate = new Date(p.startTime);
       const label = i===0 ? "NOW" : hDate.toLocaleTimeString("en-US",{hour:"numeric"}).replace(" ","");
-      const code = nwsToCode(p.icon, p.shortForecast);
       const pop = p.probabilityOfPrecipitation?.value ?? 0;
+      const code = nwsToCode(p.icon, p.shortForecast, pop);
       // Use real sunrise/sunset (same values shown on the Current Weather
       // card) rather than NWS's own isDaytime flag — that flag follows their
       // forecast-period convention (a fixed ~6pm civil "evening" boundary),
@@ -1129,16 +1143,19 @@ function hvacLoadKw(tempF){
   return 0;
 }
 
-// REAL home-use data from the GitHub Actions Emporia poller — writes
-// emporia-data.json to the repo root every ~5 min. EV charger tracks the
-// "Truck Charger" channel once it's actually charging something — kW and
+// REAL home-use data from the Emporia Cloudflare Worker (see /emporia-worker
+// in the repo) — polls every 5 min via a precise Cron Trigger, replacing the
+// old GitHub Actions workflow whose "every 5 min" schedule was silently
+// drifting to 30-40+ minutes (a documented GitHub limitation, not a bug in
+// the polling script). EV charger tracks Emporia's charger device — kW and
 // charging status are real; session/range/SOC stay simulated since there's
 // no session-start tracking available from a simple periodic poll.
+const EMPORIA_WORKER_URL = "https://emporia-poller.YOUR-SUBDOMAIN.workers.dev/"; // <-- set this after deploying
 window.__realEmporia = null;
 async function loadRealEmporiaData(){
   try{
-    const res = await fetch("emporia-data.json?_=" + Date.now());
-    if(!res.ok) return; // file may not exist yet on first deploy — fall back to simulated silently
+    const res = await fetch(EMPORIA_WORKER_URL + "?_=" + Date.now());
+    if(!res.ok) return; // Worker may have no data yet, or URL not configured — fall back to simulated silently
     const data = await res.json();
     // "Main" (the combined 1,2,3 channel) has known bad data at DAY/MONTH
     // scale via this API — confirmed via real polling data showing large
