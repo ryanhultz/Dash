@@ -358,7 +358,7 @@
         <path d="M12 2L22 21H2L12 2Z" fill="url(#logoGrad)"/>
         <path d="M12 9L16.5 17.5H7.5L12 9Z" fill="#0A0D14"/>
       </svg>
-      <h1>HOME <span style="font-size:12px; font-weight:600; color:var(--text-faint); font-family:ui-monospace,'SF Mono',Consolas,monospace; letter-spacing:.5px; vertical-align:middle; margin-left:2px;">v2.19.2</span></h1>
+      <h1>HOME <span style="font-size:12px; font-weight:600; color:var(--text-faint); font-family:ui-monospace,'SF Mono',Consolas,monospace; letter-spacing:.5px; vertical-align:middle; margin-left:2px;">v2.20.0</span></h1>
       <span style="font-size:10px; font-weight:700; letter-spacing:1.5px; color:var(--text-faint); border:1px solid var(--line); border-radius:5px; padding:4px 8px; text-transform:uppercase; margin-left:4px;">
         Live Weather · Simulated Rest
       </span>
@@ -783,6 +783,19 @@ function weatherIconSVG(code, isDay=1, cls="wicon-lg", windMph=null){
     inner = snowflake() + smallFlakes();
   } else if([95,96,99].includes(code)){
     inner = cloud(10,10,0.95) + bolt() + drops(4,16,42);
+  } else if(code===200){
+    // Sun + Rain — a sun peeking through, with real rain falling. For
+    // conditions like "Mostly Sunny with a Chance of Showers" where it's
+    // meaningfully both, not just one or the other.
+    inner = (isDay ? sun(7,22,20) : moon(22,20,7)) + cloud(10,18,0.9) + drops(3,20,44);
+  } else if(code===201){
+    // Sun + Thunderstorm — sun with a cloud and bolt, no whole-icon flash
+    // (matches the toned-down thunderstorm bolt-only flicker elsewhere).
+    inner = (isDay ? sun(7,22,18) : moon(22,18,7)) + cloud(10,12,0.85) + bolt();
+  } else if(code===202){
+    // Mixed rain and snow (sleet/wintry mix) — a cloud with both rain drops
+    // and a small snowflake falling side by side.
+    inner = cloud(10,10,0.95) + drops(2,16,42) + snowflake(46,44,8);
   } else {
     inner = cloud(10,14,0.95);
   }
@@ -868,9 +881,20 @@ function nwsToCode(iconUrl, text, pop){
   // the old keyword-only behavior rather than silently hiding real weather.
   const popKnown = pop != null;
   const meaningfulPop = !popKnown || pop >= 40;
+  const hasSun = s.includes("sunny") || s.includes(" clear") || s.includes("skc");
+  const hasRainWord = s.includes("shower") || s.includes("rain") || s.includes("drizzle");
+  const hasThunder = s.includes("tsra") || s.includes("thunder");
+  const hasSnowWord = s.includes("snow") || s.includes("sleet") || s.includes("wintry");
+
+  // Wintry mix / sleet is its own thing, not plain snow — check before the
+  // generic snow bucket so it doesn't get absorbed into it.
+  if(meaningfulPop && hasSnowWord && (hasRainWord || s.includes("mix") || s.includes("sleet"))) return 202;
+  if(meaningfulPop && hasSun && hasThunder) return 201;
+  if(meaningfulPop && hasSun && hasRainWord && !hasThunder) return 200;
+
   if(meaningfulPop){
-    if(s.includes("tsra") || s.includes("thunder")) return 95;
-    if(s.includes("snow") || s.includes("sleet") || s.includes("blizzard") || s.includes("ice")) return 73;
+    if(hasThunder) return 95;
+    if(s.includes("snow") || s.includes("blizzard") || s.includes("ice")) return 73;
     if(s.includes("fzra") || s.includes("freezing rain")) return 66;
     if(s.includes("shower")) return 80;
     if(s.includes("drizzle")) return 55;
