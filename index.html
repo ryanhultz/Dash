@@ -262,12 +262,21 @@
   #alert-banner{
     display:flex; align-items:center; gap:10px;
     margin:0 0 8px; padding:9px 14px; border-radius:9px;
-    border-left:4px solid var(--yellow); background:#2A1D0A;
+    border-left:4px solid var(--text-faint); background:var(--panel-alt);
   }
+  #alert-banner.minor{ border-left-color:var(--yellow); background:#2A1D0A; }
+  #alert-banner.moderate{ border-left-color:#F0973A; background:#2B1A0A; }
+  #alert-banner.severe{ border-left-color:#E8672E; background:#2C1608; }
   #alert-banner.extreme{ border-left-color:var(--red); background:#2E1010; animation:alert-pulse 1.6s ease-in-out infinite; }
-  #alert-icon{ width:19px; height:19px; flex-shrink:0; color:var(--yellow); }
+  #alert-icon{ width:19px; height:19px; flex-shrink:0; color:var(--text-faint); }
+  #alert-banner.minor #alert-icon{ color:var(--yellow); }
+  #alert-banner.moderate #alert-icon{ color:#F0973A; }
+  #alert-banner.severe #alert-icon{ color:#E8672E; }
   #alert-banner.extreme #alert-icon{ color:var(--red); }
-  #alert-headline{ font-size:13px; font-weight:700; color:var(--yellow); }
+  #alert-headline{ font-size:13px; font-weight:700; color:var(--text-dim); }
+  #alert-banner.minor #alert-headline{ color:var(--yellow); }
+  #alert-banner.moderate #alert-headline{ color:#F0973A; }
+  #alert-banner.severe #alert-headline{ color:#E8672E; }
   #alert-banner.extreme #alert-headline{ color:var(--red); }
   #alert-sub{ font-size:11px; color:var(--text-dim); margin-top:1px; }
   #alert-count{ margin-left:auto; font-size:10px; color:var(--text-faint); font-weight:600; flex-shrink:0; }
@@ -373,7 +382,7 @@
         <path d="M12 2L22 21H2L12 2Z" fill="url(#logoGrad)"/>
         <path d="M12 9L16.5 17.5H7.5L12 9Z" fill="#0A0D14"/>
       </svg>
-      <h1>HOME <span style="font-size:12px; font-weight:600; color:var(--text-faint); font-family:ui-monospace,'SF Mono',Consolas,monospace; letter-spacing:.5px; vertical-align:middle; margin-left:2px;">v2.21.0</span></h1>
+      <h1>HOME <span style="font-size:12px; font-weight:600; color:var(--text-faint); font-family:ui-monospace,'SF Mono',Consolas,monospace; letter-spacing:.5px; vertical-align:middle; margin-left:2px;">v2.21.1</span></h1>
       <span style="font-size:10px; font-weight:700; letter-spacing:1.5px; color:var(--text-faint); border:1px solid var(--line); border-radius:5px; padding:4px 8px; text-transform:uppercase; margin-left:4px;">
         Live Weather · Simulated Rest
       </span>
@@ -1576,19 +1585,19 @@ document.getElementById("lunch-next").addEventListener("click", ()=>{
 renderLunchCard();
 
 // ==========================================================================
-// NWS ALERT BANNER — active alerts for this location, filtered to Severe/
-// Extreme only (Minor/Moderate stay hidden — too noisy for a kiosk display).
-// Multiple active alerts cycle one at a time, same pattern as the radar's
-// local/regional rotation.
+// NWS ALERT BANNER — all active alerts for this location, color-coded by
+// severity (Extreme=red pulsing, Severe=orange, Moderate=amber, Minor=
+// yellow). Multiple active alerts cycle one at a time, same pattern as the
+// radar's local/regional rotation, worst severity shown first.
 // ==========================================================================
 let activeAlerts = [], alertCycleIdx = 0;
+const ALERT_SEVERITY_RANK = { Extreme:0, Severe:1, Moderate:2, Minor:3, Unknown:4 };
 async function loadAlerts(){
   try{
     const res = await fetch(`https://api.weather.gov/alerts/active?point=${LAT},${LON}`);
     const data = await res.json();
     activeAlerts = (data.features || [])
-      .filter(f => ["Severe","Extreme"].includes(f.properties.severity))
-      .sort((a,b) => (a.properties.severity==="Extreme"?0:1) - (b.properties.severity==="Extreme"?0:1));
+      .sort((a,b) => (ALERT_SEVERITY_RANK[a.properties.severity] ?? 5) - (ALERT_SEVERITY_RANK[b.properties.severity] ?? 5));
     alertCycleIdx = 0;
     renderAlertBanner();
   }catch(e){
@@ -1601,7 +1610,7 @@ function renderAlertBanner(){
 
   const a = activeAlerts[alertCycleIdx % activeAlerts.length].properties;
   banner.style.display = "flex";
-  banner.className = a.severity === "Extreme" ? "extreme" : "";
+  banner.className = (a.severity || "").toLowerCase();
   document.getElementById("alert-headline").textContent = a.event;
   const until = a.ends ? new Date(a.ends).toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"}) : "further notice";
   document.getElementById("alert-sub").textContent = `${a.areaDesc?.split(";")[0] || "This area"} until ${until}`;
