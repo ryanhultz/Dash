@@ -107,6 +107,8 @@
   .wstat.sun svg{width:14px; height:14px;}
 
   #wx-feels{font-size:13px; color:var(--text-dim); margin-top:5px;}
+  #wx-obs-time{font-size:10px; color:var(--text-faint); margin-top:2px;}
+  #wx-obs-time.stale{color:var(--yellow);}
   #wx-feels b{color:var(--text); font-weight:600;}
 
   #wx-trend-wrap{ flex:1; min-width:0; display:flex; flex-direction:column; justify-content:center; }
@@ -382,7 +384,7 @@
         <path d="M12 2L22 21H2L12 2Z" fill="url(#logoGrad)"/>
         <path d="M12 9L16.5 17.5H7.5L12 9Z" fill="#0A0D14"/>
       </svg>
-      <h1>HOME <span style="font-size:12px; font-weight:600; color:var(--text-faint); font-family:ui-monospace,'SF Mono',Consolas,monospace; letter-spacing:.5px; vertical-align:middle; margin-left:2px;">v2.21.1</span></h1>
+      <h1>HOME <span style="font-size:12px; font-weight:600; color:var(--text-faint); font-family:ui-monospace,'SF Mono',Consolas,monospace; letter-spacing:.5px; vertical-align:middle; margin-left:2px;">v2.22.0</span></h1>
       <span style="font-size:10px; font-weight:700; letter-spacing:1.5px; color:var(--text-faint); border:1px solid var(--line); border-radius:5px; padding:4px 8px; text-transform:uppercase; margin-left:4px;">
         Live Weather · Simulated Rest
       </span>
@@ -453,6 +455,7 @@
         <div>
           <div id="wx-temp">--°</div>
           <div id="wx-cond">Loading forecast…</div>
+          <div id="wx-obs-time"></div>
           <div id="wx-feels">Feels like <b>--°</b></div>
         </div>
         <div id="wx-trend-wrap">
@@ -979,7 +982,7 @@ async function fetchCurrentConditions(stationsUrl){
   const stationId = sdata.features[0].properties.stationIdentifier;
   const ores = await fetch(`https://api.weather.gov/stations/${stationId}/observations/latest`, {headers:{Accept:"application/geo+json"}});
   const odata = await ores.json();
-  return odata.properties; // temperature/windSpeed/barometricPressure/relativeHumidity/heatIndex/windChill are {value, unitCode}
+  return { ...odata.properties, _stationId: stationId }; // temperature/windSpeed/barometricPressure/relativeHumidity/heatIndex/windChill are {value, unitCode}
 }
 
 async function loadWeather(){
@@ -1013,6 +1016,16 @@ async function loadWeather(){
     document.getElementById("wx-icon").innerHTML = weatherIconSVG(curCode, isDayNow, "wicon-lg", curWindMph);
     document.getElementById("wx-temp").textContent = Math.round(curTempF)+"°F";
     document.getElementById("wx-cond").textContent = cur.textDescription || wText(curCode);
+    const obsTimeEl = document.getElementById("wx-obs-time");
+    if(cur.timestamp){
+      const obsDate = new Date(cur.timestamp);
+      const ageMin = (Date.now() - obsDate.getTime()) / 60000;
+      obsTimeEl.textContent = `${cur._stationId || "Station"} observed ${obsDate.toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"})}`;
+      obsTimeEl.className = ageMin > 45 ? "stale" : "";
+      if(ageMin > 45) obsTimeEl.textContent += ` (${Math.round(ageMin)} min old)`;
+    } else {
+      obsTimeEl.textContent = "";
+    }
     document.getElementById("wx-hum").textContent = (curHum!=null ? curHum : "--")+"%";
     const curWindDir = degToCompass(cur.windDirection?.value);
     document.getElementById("wx-wind").textContent = Math.round(curWindMph)+" mph"+(curWindDir?" "+curWindDir:"");
@@ -1115,7 +1128,7 @@ async function loadWeather(){
     console.error(e);
   }
 }
-loadWeather(); setInterval(()=>{ loadWeather(); if(typeof drawSolarCurve==="function") drawSolarCurve(); }, 15*60*1000);
+loadWeather(); setInterval(()=>{ loadWeather(); if(typeof drawSolarCurve==="function") drawSolarCurve(); }, 5*60*1000);
 
 // SIMULATED calendar — replace with a real iCloud/Apple Calendar feed
 // (a public "webcal" ICS link fetched through a small CORS proxy, or
