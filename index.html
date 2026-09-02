@@ -257,6 +257,21 @@
 
   svg{overflow:visible;}
 
+  /* ---- NWS alert banner ---- */
+  @keyframes alert-pulse{ 0%,100%{ box-shadow:0 0 0 0 rgba(239,91,90,.55); } 50%{ box-shadow:0 0 0 6px rgba(239,91,90,0); } }
+  #alert-banner{
+    display:flex; align-items:center; gap:10px;
+    margin:0 0 8px; padding:9px 14px; border-radius:9px;
+    border-left:4px solid var(--yellow); background:#2A1D0A;
+  }
+  #alert-banner.extreme{ border-left-color:var(--red); background:#2E1010; animation:alert-pulse 1.6s ease-in-out infinite; }
+  #alert-icon{ width:19px; height:19px; flex-shrink:0; color:var(--yellow); }
+  #alert-banner.extreme #alert-icon{ color:var(--red); }
+  #alert-headline{ font-size:13px; font-weight:700; color:var(--yellow); }
+  #alert-banner.extreme #alert-headline{ color:var(--red); }
+  #alert-sub{ font-size:11px; color:var(--text-dim); margin-top:1px; }
+  #alert-count{ margin-left:auto; font-size:10px; color:var(--text-faint); font-weight:600; flex-shrink:0; }
+
   /* ---- lunch menu card ---- */
   .cg-lunch{ position:relative; overflow:hidden; }
   .cg-lunch::before{
@@ -358,7 +373,7 @@
         <path d="M12 2L22 21H2L12 2Z" fill="url(#logoGrad)"/>
         <path d="M12 9L16.5 17.5H7.5L12 9Z" fill="#0A0D14"/>
       </svg>
-      <h1>HOME <span style="font-size:12px; font-weight:600; color:var(--text-faint); font-family:ui-monospace,'SF Mono',Consolas,monospace; letter-spacing:.5px; vertical-align:middle; margin-left:2px;">v2.20.0</span></h1>
+      <h1>HOME <span style="font-size:12px; font-weight:600; color:var(--text-faint); font-family:ui-monospace,'SF Mono',Consolas,monospace; letter-spacing:.5px; vertical-align:middle; margin-left:2px;">v2.21.0</span></h1>
       <span style="font-size:10px; font-weight:700; letter-spacing:1.5px; color:var(--text-faint); border:1px solid var(--line); border-radius:5px; padding:4px 8px; text-transform:uppercase; margin-left:4px;">
         Live Weather · Simulated Rest
       </span>
@@ -403,6 +418,15 @@
         <div id="lunch-upload-status" style="font-size:11px; color:var(--text-faint);"></div>
       </div>
     </div>
+  </div>
+
+  <div id="alert-banner" style="display:none;">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" id="alert-icon"><path d="M12 9v4M12 17h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/></svg>
+    <div id="alert-text">
+      <div id="alert-headline">—</div>
+      <div id="alert-sub">—</div>
+    </div>
+    <div id="alert-count"></div>
   </div>
 
   <div id="content-grid">
@@ -1550,6 +1574,42 @@ document.getElementById("lunch-next").addEventListener("click", ()=>{
   renderLunchCard();
 });
 renderLunchCard();
+
+// ==========================================================================
+// NWS ALERT BANNER — active alerts for this location, filtered to Severe/
+// Extreme only (Minor/Moderate stay hidden — too noisy for a kiosk display).
+// Multiple active alerts cycle one at a time, same pattern as the radar's
+// local/regional rotation.
+// ==========================================================================
+let activeAlerts = [], alertCycleIdx = 0;
+async function loadAlerts(){
+  try{
+    const res = await fetch(`https://api.weather.gov/alerts/active?point=${LAT},${LON}`);
+    const data = await res.json();
+    activeAlerts = (data.features || [])
+      .filter(f => ["Severe","Extreme"].includes(f.properties.severity))
+      .sort((a,b) => (a.properties.severity==="Extreme"?0:1) - (b.properties.severity==="Extreme"?0:1));
+    alertCycleIdx = 0;
+    renderAlertBanner();
+  }catch(e){
+    console.error("Alert fetch failed:", e);
+  }
+}
+function renderAlertBanner(){
+  const banner = document.getElementById("alert-banner");
+  if(!activeAlerts.length){ banner.style.display = "none"; return; }
+
+  const a = activeAlerts[alertCycleIdx % activeAlerts.length].properties;
+  banner.style.display = "flex";
+  banner.className = a.severity === "Extreme" ? "extreme" : "";
+  document.getElementById("alert-headline").textContent = a.event;
+  const until = a.ends ? new Date(a.ends).toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"}) : "further notice";
+  document.getElementById("alert-sub").textContent = `${a.areaDesc?.split(";")[0] || "This area"} until ${until}`;
+  document.getElementById("alert-count").textContent = activeAlerts.length > 1 ? `${(alertCycleIdx%activeAlerts.length)+1}/${activeAlerts.length}` : "";
+}
+loadAlerts();
+setInterval(loadAlerts, 5*60*1000); // recheck every 5 min — genuinely new/expired alerts matter fast
+setInterval(()=>{ alertCycleIdx++; renderAlertBanner(); }, 8*1000); // cycle multiple active alerts every 8s
 
 </script>
 </body>
