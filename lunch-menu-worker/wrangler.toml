@@ -6,4 +6,4 @@ compatibility_date = "2026-08-01"
 # then paste the id it prints below.
 [[kv_namespaces]]
 binding = "LUNCH_KV"
-id = "REPLACE_WITH_YOUR_KV_NAMESPACE_ID"
+id = "4932f5e2dc304ccd8230d5377e571f4c"
