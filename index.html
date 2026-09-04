@@ -1522,7 +1522,7 @@ function parseLunchText(text){
 // of localStorage, which never synced across devices — every device now
 // reads/writes the same shared menu. DEFAULT_LUNCH_MENU is only used as a
 // fallback if the Worker is unreachable or hasn't been given data yet.
-const LUNCH_WORKER_URL = "https://lunch-menu-sync.YOUR-SUBDOMAIN.workers.dev/"; // <-- set this after deploying
+const LUNCH_WORKER_URL = "https://lunch-menu-sync.ryanhultz.workers.dev"; // <-- set this after deploying
 let lunchMenuCache = DEFAULT_LUNCH_MENU;
 
 async function lunchFetchMenu(){
