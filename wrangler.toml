@@ -1,0 +1,9 @@
+name = "lunch-menu-sync"
+main = "src/index.js"
+compatibility_date = "2026-08-01"
+
+# Create with: wrangler kv namespace create LUNCH_KV
+# then paste the id it prints below.
+[[kv_namespaces]]
+binding = "LUNCH_KV"
+id = "REPLACE_WITH_YOUR_KV_NAMESPACE_ID"

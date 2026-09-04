@@ -384,7 +384,7 @@
         <path d="M12 2L22 21H2L12 2Z" fill="url(#logoGrad)"/>
         <path d="M12 9L16.5 17.5H7.5L12 9Z" fill="#0A0D14"/>
       </svg>
-      <h1>HOME <span style="font-size:12px; font-weight:600; color:var(--text-faint); font-family:ui-monospace,'SF Mono',Consolas,monospace; letter-spacing:.5px; vertical-align:middle; margin-left:2px;">v2.22.0</span></h1>
+      <h1>HOME <span style="font-size:12px; font-weight:600; color:var(--text-faint); font-family:ui-monospace,'SF Mono',Consolas,monospace; letter-spacing:.5px; vertical-align:middle; margin-left:2px;">v2.23.0</span></h1>
       <span style="font-size:10px; font-weight:700; letter-spacing:1.5px; color:var(--text-faint); border:1px solid var(--line); border-radius:5px; padding:4px 8px; text-transform:uppercase; margin-left:4px;">
         Live Weather · Simulated Rest
       </span>
@@ -1518,12 +1518,29 @@ function parseLunchText(text){
   return menu;
 }
 
-function lunchGetMenu(){
+// Synced via a Cloudflare Worker (see /lunch-menu-worker in the repo) instead
+// of localStorage, which never synced across devices — every device now
+// reads/writes the same shared menu. DEFAULT_LUNCH_MENU is only used as a
+// fallback if the Worker is unreachable or hasn't been given data yet.
+const LUNCH_WORKER_URL = "https://lunch-menu-sync.YOUR-SUBDOMAIN.workers.dev/"; // <-- set this after deploying
+let lunchMenuCache = DEFAULT_LUNCH_MENU;
+
+async function lunchFetchMenu(){
   try{
-    const stored = localStorage.getItem("lunchMenu");
-    if(stored) return JSON.parse(stored);
-  }catch(e){ console.error(e); }
-  return DEFAULT_LUNCH_MENU;
+    const res = await fetch(LUNCH_WORKER_URL + "?_=" + Date.now());
+    if(!res.ok) return;
+    const data = await res.json();
+    if(data && Object.keys(data).length){
+      lunchMenuCache = data;
+      renderLunchCard();
+    }
+  }catch(e){
+    console.error("Lunch menu fetch failed:", e); // falls back to DEFAULT_LUNCH_MENU / last-known cache silently
+  }
+}
+
+function lunchGetMenu(){
+  return lunchMenuCache;
 }
 
 document.getElementById("lunch-file").addEventListener("change", async (e)=>{
@@ -1538,15 +1555,24 @@ document.getElementById("lunch-file").addEventListener("change", async (e)=>{
       statusEl.textContent = "Couldn't find any lines matching the expected format.";
       return;
     }
-    localStorage.setItem("lunchMenu", JSON.stringify(menu));
-    statusEl.textContent = `Saved ${count} day(s).`;
+    statusEl.textContent = "Syncing…";
+    const res = await fetch(LUNCH_WORKER_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(menu),
+    });
+    if(!res.ok) throw new Error(`Worker returned ${res.status}`);
+    lunchMenuCache = menu; // optimistic local update, don't wait for a re-fetch
+    statusEl.textContent = `Saved and synced ${count} day(s) — visible on all devices.`;
     lunchSelectedDate = new Date();
     renderLunchCard();
   }catch(err){
-    statusEl.textContent = "Couldn't read that file: " + err.message;
+    statusEl.textContent = "Couldn't sync: " + err.message;
     console.error(err);
   }
 });
+lunchFetchMenu();
+setInterval(lunchFetchMenu, 5*60*1000); // pick up updates made from another device
 
 let lunchSelectedDate = new Date();
 // Picks a fun emoji based on keywords in the menu text — purely cosmetic,
