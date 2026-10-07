@@ -1,20 +1,20 @@
 {
-  "updated_utc": "2026-10-07T02:23:41.213807Z",
+  "updated_utc": "2026-10-07T08:53:41.661178Z",
   "channels": [
     {
       "device_gid": 154036,
       "channel_num": "1,2,3",
       "name": "Main",
-      "usage_kwh_last_min": 0.005380386201999806,
-      "usage_kwh_today": -31.984575566429747,
-      "usage_kwh_month": -60.931319771490216
+      "usage_kwh_last_min": 0.0053019457644003405,
+      "usage_kwh_today": 22.475272046633034,
+      "usage_kwh_month": -38.064682614541695
     },
     {
       "device_gid": 154036,
       "channel_num": "1",
       "name": "Stove",
       "usage_kwh_last_min": 0.0,
-      "usage_kwh_today": 0.813381653632058,
+      "usage_kwh_today": 0.0,
       "usage_kwh_month": 3.9506530819418697
     },
     {
@@ -22,7 +22,7 @@
       "channel_num": "2",
       "name": "Dryer",
       "usage_kwh_last_min": 0.0,
-      "usage_kwh_today": 4.477152947231399,
+      "usage_kwh_today": 0.0,
       "usage_kwh_month": 12.370145896416771
     },
     {
@@ -30,39 +30,39 @@
       "channel_num": "3",
       "name": "Pool/Hot Tub",
       "usage_kwh_last_min": 0.0,
-      "usage_kwh_today": 0.029683582679165734,
+      "usage_kwh_today": 0.0,
       "usage_kwh_month": 0.1909601614974605
     },
     {
       "device_gid": 154036,
       "channel_num": "4",
       "name": "4",
-      "usage_kwh_last_min": 0.001483313190680963,
-      "usage_kwh_today": 0.7829004270375638,
-      "usage_kwh_month": 5.144497164033956
+      "usage_kwh_last_min": 0.0019718325072041265,
+      "usage_kwh_today": 0.16784868758241026,
+      "usage_kwh_month": 5.350947853105903
     },
     {
       "device_gid": 154036,
       "channel_num": "5",
       "name": "Water Heater",
       "usage_kwh_last_min": 0.0,
-      "usage_kwh_today": 5.51177137410051,
+      "usage_kwh_today": 0.0,
       "usage_kwh_month": 28.383079374189386
     },
     {
       "device_gid": 154036,
       "channel_num": "6",
       "name": "Hallway/Microwave Coffee Maker ",
-      "usage_kwh_last_min": 0.00018922725288073223,
-      "usage_kwh_today": 1.0815848536266546,
-      "usage_kwh_month": 5.568462791380459
+      "usage_kwh_last_min": 0.00017981847976755212,
+      "usage_kwh_today": 0.05439720779666511,
+      "usage_kwh_month": 5.641650203380692
     },
     {
       "device_gid": 154036,
       "channel_num": "7",
       "name": "7",
       "usage_kwh_last_min": 0.0,
-      "usage_kwh_today": 0.44199720586644275,
+      "usage_kwh_today": 0.0,
       "usage_kwh_month": 2.678523060309357
     },
     {
@@ -70,8 +70,8 @@
       "channel_num": "8",
       "name": "Well Pump",
       "usage_kwh_last_min": 0.0,
-      "usage_kwh_today": 0.6263384657499524,
-      "usage_kwh_month": 4.2915408026856845
+      "usage_kwh_today": 0.1919807795884874,
+      "usage_kwh_month": 4.483521582274172
     },
     {
       "device_gid": 154036,
@@ -86,7 +86,7 @@
       "channel_num": "10",
       "name": "10",
       "usage_kwh_last_min": 0.0,
-      "usage_kwh_today": 0.15938273808532294,
+      "usage_kwh_today": 0.0,
       "usage_kwh_month": 1.049838879243533
     },
     {
@@ -94,23 +94,23 @@
       "channel_num": "11",
       "name": "Master Bed Room Heat Pump",
       "usage_kwh_last_min": 0.0,
-      "usage_kwh_today": 0.013300892948755954,
-      "usage_kwh_month": 2.6300339187594024
+      "usage_kwh_today": 0.003293758350575412,
+      "usage_kwh_month": 2.633327983444906
     },
     {
       "device_gid": 154036,
       "channel_num": "12",
       "name": "12",
-      "usage_kwh_last_min": 0.0010921206965799686,
-      "usage_kwh_today": 1.7081619471774832,
-      "usage_kwh_month": 10.33921350435624
+      "usage_kwh_last_min": 0.001060527627909625,
+      "usage_kwh_today": 0.21383156509613904,
+      "usage_kwh_month": 10.627788569773001
     },
     {
       "device_gid": 154036,
       "channel_num": "13",
       "name": "Kitchen ",
       "usage_kwh_last_min": 0.0,
-      "usage_kwh_today": 1.473354673992793,
+      "usage_kwh_today": 0.0,
       "usage_kwh_month": 14.39243575680006
     },
     {
@@ -118,48 +118,48 @@
       "channel_num": "14",
       "name": "Barn",
       "usage_kwh_last_min": 0.0,
-      "usage_kwh_today": -52.09121813913875,
-      "usage_kwh_month": -172.3796388803709
+      "usage_kwh_today": 0.37637470738919276,
+      "usage_kwh_month": -151.01964348020914
     },
     {
       "device_gid": 154036,
       "channel_num": "15",
       "name": "15",
-      "usage_kwh_last_min": 5.507913763876314e-06,
-      "usage_kwh_today": 0.2693643822136972,
-      "usage_kwh_month": 2.383453141875948
+      "usage_kwh_last_min": 1.8674214371928462e-06,
+      "usage_kwh_today": 0.0011919327706891077,
+      "usage_kwh_month": 2.38521027740944
     },
     {
       "device_gid": 154036,
       "channel_num": "16",
       "name": "Emma's Bed Room Heat Pump",
       "usage_kwh_last_min": 0.0,
-      "usage_kwh_today": 0.01168604922135671,
-      "usage_kwh_month": 0.07369793127430817
+      "usage_kwh_today": 0.0021209736590915257,
+      "usage_kwh_month": 0.07689036183887066
     },
     {
       "device_gid": 154036,
       "channel_num": "TotalUsage",
       "name": "TotalUsage",
-      "usage_kwh_last_min": 0.005380386201999806,
-      "usage_kwh_today": 20.106642572709006,
-      "usage_kwh_month": 111.44831910888067
+      "usage_kwh_last_min": 0.0053019457644003405,
+      "usage_kwh_today": 22.475272046633034,
+      "usage_kwh_month": 112.95496086566745
     },
     {
       "device_gid": 154036,
       "channel_num": "Balance",
       "name": "Balance",
-      "usage_kwh_last_min": 0.0026102171480942658,
-      "usage_kwh_today": 2.7065813791458537,
-      "usage_kwh_month": 17.187572926075763
+      "usage_kwh_last_min": 0.002087899728081844,
+      "usage_kwh_today": 0.4820755956452768,
+      "usage_kwh_month": 17.92577710600154
     }
   ],
   "charger": {
     "device_gid": 319712,
-    "charger_on": false,
+    "charger_on": true,
     "charging_rate_amps": 48,
     "max_charging_rate_amps": 48,
     "status": "Standby",
-    "message": "Connected to EV"
+    "message": "EV is not accepting charge"
   }
 }
