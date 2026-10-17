@@ -1,85 +1,85 @@
 {
-  "updated_utc": "2026-10-17T16:20:50.209489Z",
+  "updated_utc": "2026-10-17T18:34:15.721775Z",
   "channels": [
     {
       "device_gid": 154036,
       "channel_num": "1,2,3",
       "name": "Main",
-      "usage_kwh_last_min": 0.05492867150010003,
-      "usage_kwh_today": 16.996740758149848,
-      "usage_kwh_month": 48.49325391123546
+      "usage_kwh_last_min": -0.18602758300781247,
+      "usage_kwh_today": -0.6260552051332673,
+      "usage_kwh_month": 30.87045794795235
     },
     {
       "device_gid": 154036,
       "channel_num": "1",
       "name": "Stove",
-      "usage_kwh_last_min": 2.2337020198504127e-05,
-      "usage_kwh_today": 0.0027896166218651665,
-      "usage_kwh_month": 27.274072599572072
+      "usage_kwh_last_min": 0.0,
+      "usage_kwh_today": 0.003774879409737057,
+      "usage_kwh_month": 27.275057862359944
     },
     {
       "device_gid": 154036,
       "channel_num": "2",
       "name": "Dryer",
-      "usage_kwh_last_min": 0.05278300224473741,
-      "usage_kwh_today": 4.035633648077117,
-      "usage_kwh_month": 34.19520524099879
+      "usage_kwh_last_min": 0.0,
+      "usage_kwh_today": 5.353147258965704,
+      "usage_kwh_month": 35.51271885188738
     },
     {
       "device_gid": 154036,
       "channel_num": "3",
       "name": "Pool/Hot Tub",
       "usage_kwh_last_min": 0.0,
-      "usage_kwh_today": 4.782652960883247e-05,
-      "usage_kwh_month": 0.5042866778339281
+      "usage_kwh_today": 0.00010748610099156698,
+      "usage_kwh_month": 0.5043463374053109
     },
     {
       "device_gid": 154036,
       "channel_num": "4",
       "name": "4",
-      "usage_kwh_last_min": 0.00034600783973932263,
-      "usage_kwh_today": 1.109518733548331,
-      "usage_kwh_month": 17.137839477497128
+      "usage_kwh_last_min": 0.0020293055398123605,
+      "usage_kwh_today": 1.2275994953476135,
+      "usage_kwh_month": 17.255920239296408
     },
     {
       "device_gid": 154036,
       "channel_num": "5",
       "name": "Water Heater",
-      "usage_kwh_last_min": 0.016422900091807045,
-      "usage_kwh_today": 1.4988373598395455,
-      "usage_kwh_month": 90.72250858793579
+      "usage_kwh_last_min": 0.0047303611319405685,
+      "usage_kwh_today": 3.1414762497880724,
+      "usage_kwh_month": 92.36514747788432
     },
     {
       "device_gid": 154036,
       "channel_num": "6",
       "name": "Hallway/Microwave Coffee Maker ",
-      "usage_kwh_last_min": 0.0005307694918844434,
-      "usage_kwh_today": 0.715123458027948,
-      "usage_kwh_month": 15.472149804500575
+      "usage_kwh_last_min": 0.00018708883626120432,
+      "usage_kwh_today": 0.7463079820289634,
+      "usage_kwh_month": 15.503334328501591
     },
     {
       "device_gid": 154036,
       "channel_num": "7",
       "name": "7",
-      "usage_kwh_last_min": 0.00079699238008923,
-      "usage_kwh_today": 0.22078222317775092,
-      "usage_kwh_month": 6.112974882801107
+      "usage_kwh_last_min": 0.0,
+      "usage_kwh_today": 0.23380817349248462,
+      "usage_kwh_month": 6.126000833115841
     },
     {
       "device_gid": 154036,
       "channel_num": "8",
       "name": "Well Pump",
       "usage_kwh_last_min": 0.0,
-      "usage_kwh_today": 0.4614178136057783,
-      "usage_kwh_month": 12.325955067124108
+      "usage_kwh_today": 0.49623266088225404,
+      "usage_kwh_month": 12.360769914400583
     },
     {
       "device_gid": 154036,
       "channel_num": "9",
       "name": "living Room Heat Pump",
-      "usage_kwh_last_min": 0.011707077964782714,
-      "usage_kwh_today": 4.484157056479983,
-      "usage_kwh_month": 11.324223437932334
+      "usage_kwh_last_min": 0.00042354620615641276,
+      "usage_kwh_today": 4.744091699178484,
+      "usage_kwh_month": 11.584158080630834
     },
     {
       "device_gid": 154036,
@@ -93,65 +93,65 @@
       "device_gid": 154036,
       "channel_num": "11",
       "name": "Master Bed Room Heat Pump",
-      "usage_kwh_last_min": 0.0,
-      "usage_kwh_today": 0.006565484478637907,
-      "usage_kwh_month": 3.4644832318542815
+      "usage_kwh_last_min": 0.0002382829766046433,
+      "usage_kwh_today": 0.007878200868399937,
+      "usage_kwh_month": 3.4657959482440432
     },
     {
       "device_gid": 154036,
       "channel_num": "12",
       "name": "12",
-      "usage_kwh_last_min": 0.0010953824548191494,
-      "usage_kwh_today": 0.6521873260027887,
-      "usage_kwh_month": 28.9308030813381
+      "usage_kwh_last_min": 0.0022938777451288134,
+      "usage_kwh_today": 0.9021503917827925,
+      "usage_kwh_month": 29.180766147118103
     },
     {
       "device_gid": 154036,
       "channel_num": "13",
       "name": "Kitchen ",
-      "usage_kwh_last_min": 0.014252375801934135,
-      "usage_kwh_today": 0.6284444241200553,
-      "usage_kwh_month": 22.35551973305134
+      "usage_kwh_last_min": 0.0018961714463006881,
+      "usage_kwh_today": 1.348402206749916,
+      "usage_kwh_month": 23.075477515681207
     },
     {
       "device_gid": 154036,
       "channel_num": "14",
       "name": "Barn",
-      "usage_kwh_last_min": -0.0496833231947157,
-      "usage_kwh_today": 0.0,
-      "usage_kwh_month": -281.41906711599006
+      "usage_kwh_last_min": -0.19948067452566962,
+      "usage_kwh_today": -21.487997443001486,
+      "usage_kwh_month": -303.8014415791181
     },
     {
       "device_gid": 154036,
       "channel_num": "15",
       "name": "15",
-      "usage_kwh_last_min": 0.0009842449854214985,
-      "usage_kwh_today": 0.2617795150274631,
-      "usage_kwh_month": 5.959585396262825
+      "usage_kwh_last_min": 0.00034990561031159897,
+      "usage_kwh_today": 0.3214376835489204,
+      "usage_kwh_month": 6.019243564784283
     },
     {
       "device_gid": 154036,
       "channel_num": "16",
       "name": "Emma's Bed Room Heat Pump",
       "usage_kwh_last_min": 0.0,
-      "usage_kwh_today": 0.006356087122493321,
-      "usage_kwh_month": 0.7683675799036026
+      "usage_kwh_today": 0.007396477344830832,
+      "usage_kwh_month": 0.7694079701259401
     },
     {
       "device_gid": 154036,
       "channel_num": "TotalUsage",
       "name": "TotalUsage",
-      "usage_kwh_last_min": 0.10461199469481573,
-      "usage_kwh_today": 16.996740758149848,
-      "usage_kwh_month": 329.9123210272255
+      "usage_kwh_last_min": 0.013453091517857146,
+      "usage_kwh_today": 20.86194223786822,
+      "usage_kwh_month": 334.6718995270704
     },
     {
       "device_gid": 154036,
       "channel_num": "Balance",
       "name": "Balance",
-      "usage_kwh_last_min": 0.0056709044194022725,
-      "usage_kwh_today": 1.928409029342051,
-      "usage_kwh_month": 50.956475462242615
+      "usage_kwh_last_min": 0.0013045520253408464,
+      "usage_kwh_today": 2.237817256357123,
+      "usage_kwh_month": 51.26588368925773
     }
   ],
   "charger": {
